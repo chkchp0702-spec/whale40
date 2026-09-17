@@ -31,6 +31,9 @@ jobs:
           OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SEC_PROXY: ${{ secrets.SEC_PROXY }}
+          SEC_PROXY_KEY: ${{ secrets.SEC_PROXY_KEY }}
+
         run: python whale40.py
 
       - name: 결과 저장
