@@ -2,7 +2,8 @@ name: whale40
 
 on:
   schedule:
-    - cron: "0 2 * * 2-6"   # UTC 02:00 = 한국시간 오전 11:00
+    - cron: "37 1 * * *"
+ # UTC 02:00 = 한국시간 오전 11:00
   workflow_dispatch:
     inputs:
       inspect:
