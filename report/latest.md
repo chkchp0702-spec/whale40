@@ -2,8 +2,6 @@
 
 1년 수익률 기준 기관 TOP 20 + 유명인 TOP 20
 
-_전일(2026-09-22) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
-
 ## 🔔 새로 올라온 13F
 
 최근 새 공시 없음. 13F는 분기마다(2·5·8·11월 중순) 몰려서 올라옵니다.
@@ -79,51 +77,51 @@ _전일(2026-09-22) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 
 | # | 전일 | 이름 | 1년 | 증감 | 상위 보유 |
 |---|---|---|---|---|---|
-| 1 | – | EcoR1 Capital | **+105.5%** | · | ZYME 자임웍스, ANAB 아냅티스바이오, AKTS Aktis Oncology |
-| 2 | – | Slate Path Capital | **+82.3%** | · | UNP 유니온퍼시픽, U 유니티, UAL 유나이티드항공 |
-| 3 | – | Redmile Group | **+72.9%** | · | SRRK 스칼라록, KRYS 크리스탈바이오텍, STOK 스토크 |
-| 4 | – | Deep Track Capital | **+64.1%** | · | GH 가던트헬스, IMVT 이뮤노반트, GPCR 스트럭처테라퓨틱스 |
-| 5 | – | Baker Bros. Advisors | **+44.0%** | · | INCY 인사이트, RVMD 레볼루션메디슨, MDGL 마드리갈 |
-| 6 | – | Perceptive Advisors | **+39.9%** | · | PRAX 프락시스, AGLE Spyre Therapeutics, CELC 셀큐이티 |
-| 7 | – | Glenview Capital Management | **+35.1%** | · | GPN 글로벌페이먼츠, CVS CVS, THC 테닛헬스케어 |
-| 8 | – | BVF | **+34.7%** | · | RVMD 레볼루션메디슨, KYMR 카이메라, XOMA 조마 |
-| 9 | – | Point72 Asset Management | **+33.4%** | · | NONE WEC Energy, SPY S&P500 ETF, CRDO 크레도 |
-| 10 | – | Avoro Capital Advisors | **+32.0%** | · | UTHR 유나이티드테라퓨틱스, ASND 아센디스, KRYS 크리스탈바이오텍 |
-| 11 | – | Light Street Capital | **+31.0%** | · | TSM TSMC, AMD AMD, ALAB 아스테라랩스 |
-| 12 | – | Maverick Capital | **+28.9%** | · | NU 누홀딩스, NVDA 엔비디아, AMD AMD |
-| 13 | – | D. E. Shaw | **+27.9%** | · | SPY S&P500 ETF, NONE Strategy, NVDA 엔비디아 |
-| 14 | – | Vivo Capital | **+27.7%** | · | TRVI 트레비, PRAX 프락시스, ERAS 에라스카 |
-| 15 | – | Valiant Capital Management | **+25.2%** | · | AMZN 아마존, CORZ 코어사이언티픽, IWM 러셀2000 ETF |
-| 16 | – | Rock Springs Capital Management | **+23.2%** | · | RVMD 레볼루션메디슨, TVTX 트래비어, LLY 일라이릴리 |
-| 17 | – | Tudor Investment | **+21.6%** | · | IWM 러셀2000 ETF, QQQ 나스닥100 ETF, TSM TSMC |
-| 18 | – | Bridgewater Associates | **+21.3%** | · | SPY S&P500 ETF, IVV iShares S&P500, NVDA 엔비디아 |
-| 19 | – | OrbiMed Advisors | **+21.1%** | · | EWTX 엣지와이즈, ELVN Enliven Therapeutics, LLY 일라이릴리 |
-| 20 | – | RA Capital Management | **+20.9%** | · | ASND 아센디스, PBLS Parabilis Medicines, RYTM 리듬 |
+| 1 | · | EcoR1 Capital | **+105.5%** | · | ZYME 자임웍스, ANAB 아냅티스바이오, AKTS Aktis Oncology |
+| 2 | · | Slate Path Capital | **+82.3%** | · | UNP 유니온퍼시픽, U 유니티, UAL 유나이티드항공 |
+| 3 | · | Redmile Group | **+72.9%** | · | SRRK 스칼라록, KRYS 크리스탈바이오텍, STOK 스토크 |
+| 4 | · | Deep Track Capital | **+64.1%** | · | GH 가던트헬스, IMVT 이뮤노반트, GPCR 스트럭처테라퓨틱스 |
+| 5 | · | Baker Bros. Advisors | **+44.0%** | · | INCY 인사이트, RVMD 레볼루션메디슨, MDGL 마드리갈 |
+| 6 | · | Perceptive Advisors | **+39.9%** | · | PRAX 프락시스, AGLE Spyre Therapeutics, CELC 셀큐이티 |
+| 7 | · | Glenview Capital Management | **+35.1%** | · | GPN 글로벌페이먼츠, CVS CVS, THC 테닛헬스케어 |
+| 8 | · | BVF | **+34.7%** | · | RVMD 레볼루션메디슨, KYMR 카이메라, XOMA 조마 |
+| 9 | · | Point72 Asset Management | **+33.4%** | · | NONE WEC Energy, SPY S&P500 ETF, CRDO 크레도 |
+| 10 | · | Avoro Capital Advisors | **+32.0%** | · | UTHR 유나이티드테라퓨틱스, ASND 아센디스, KRYS 크리스탈바이오텍 |
+| 11 | · | Light Street Capital | **+31.0%** | · | TSM TSMC, AMD AMD, ALAB 아스테라랩스 |
+| 12 | · | Maverick Capital | **+28.9%** | · | NU 누홀딩스, NVDA 엔비디아, AMD AMD |
+| 13 | · | D. E. Shaw | **+27.9%** | · | SPY S&P500 ETF, NONE Strategy, NVDA 엔비디아 |
+| 14 | · | Vivo Capital | **+27.7%** | · | TRVI 트레비, PRAX 프락시스, ERAS 에라스카 |
+| 15 | · | Valiant Capital Management | **+25.2%** | · | AMZN 아마존, CORZ 코어사이언티픽, IWM 러셀2000 ETF |
+| 16 | · | Rock Springs Capital Management | **+23.2%** | · | RVMD 레볼루션메디슨, TVTX 트래비어, LLY 일라이릴리 |
+| 17 | · | Tudor Investment | **+21.6%** | · | IWM 러셀2000 ETF, QQQ 나스닥100 ETF, TSM TSMC |
+| 18 | · | Bridgewater Associates | **+21.3%** | · | SPY S&P500 ETF, IVV iShares S&P500, NVDA 엔비디아 |
+| 19 | · | OrbiMed Advisors | **+21.1%** | · | EWTX 엣지와이즈, ELVN Enliven Therapeutics, LLY 일라이릴리 |
+| 20 | · | RA Capital Management | **+20.9%** | · | ASND 아센디스, PBLS Parabilis Medicines, RYTM 리듬 |
 
 ## 유명인 TOP 20
 
 | # | 전일 | 이름 | 1년 | 증감 | 상위 보유 |
 |---|---|---|---|---|---|
-| 1 | – | 모니시 파브라이 | **+42.9%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
-| 2 | – | 키스 마이스터 | **+41.0%** | · | ILMN 일루미나, WGS 진디엑스, VSTS 베스티스 |
-| 3 | – | 폴 싱어 | **+35.5%** | · | TFPM.TO Triple Flag Precious M, PSX 필립스66, QQQ 나스닥100 ETF |
-| 4 | – | 스탠리 드러켄밀러 | **+35.2%** | · | NTRA 나테라, INSM 인스메드, TSM TSMC |
-| 5 | – | 프렘 왓사 | **+35.0%** | · | OLA.TO Orla Mining, ELD.TO Eldorado Gold, KHC 크래프트하인즈 |
-| 6 | – | 스티브 코언 | **+33.4%** | · | NONE WEC Energy, SPY S&P500 ETF, CRDO 크레도 |
-| 7 | – | 알렉스 데너 | **+30.0%** | · | INVA 이노비바, IRWD 아이언우드, AMRN 아마린 |
-| 8 | – | 리 에인슬리 | **+28.9%** | · | NU 누홀딩스, NVDA 엔비디아, AMD AMD |
-| 9 | – | 브루스 버코위츠 | **+27.9%** | · | JOE 세인트조, EPD 엔터프라이즈프로덕츠, OZK 뱅크OZK |
-| 10 | – | 빌 밀러 | **+24.9%** | · | NBR 네이버스, GTN 그레이미디어, SPUU Direxion Shares ETF |
-| 11 | – | 폴 힐랄 | **+24.6%** | · | DLTR 달러트리 |
-| 12 | – | 리루 | **+22.9%** | · | GOOGL 알파벳 A, GOOG 알파벳 C, BRK-B Berkshire Hathaway |
-| 13 | – | 폴 튜더 존스 | **+21.6%** | · | IWM 러셀2000 ETF, QQQ 나스닥100 ETF, TSM TSMC |
-| 14 | – | 조지 소로스 | **+21.5%** | · | NONE Global Pmts, TSM TSMC, NVDA 엔비디아 |
-| 15 | – | 레이 달리오 | **+21.3%** | · | SPY S&P500 ETF, IVV iShares S&P500, NVDA 엔비디아 |
-| 16 | – | 조엘 그린블랫 | **+19.7%** | · | SPY S&P500 ETF, AAPL 애플, NVDA 엔비디아 |
-| 17 | – | 존 오버덱 | **+19.7%** | · | NONE Western Digital, AMZN 아마존, NVDA 엔비디아 |
-| 18 | – | 이지 잉글랜더 | **+18.9%** | · | IWM 러셀2000 ETF, IVV iShares S&P500, SPY S&P500 ETF |
-| 19 | – | 빌 나이그렌 | **+18.6%** | · | KDP 큐리그닥터페퍼, ABNB 에어비앤비, CRM 세일즈포스 |
-| 20 | – | 안드레아스 할보르센 | **+18.6%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
+| 1 | · | 모니시 파브라이 | **+42.9%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
+| 2 | · | 키스 마이스터 | **+41.0%** | · | ILMN 일루미나, WGS 진디엑스, VSTS 베스티스 |
+| 3 | · | 폴 싱어 | **+35.5%** | · | TFPM.TO Triple Flag Precious M, PSX 필립스66, QQQ 나스닥100 ETF |
+| 4 | · | 스탠리 드러켄밀러 | **+35.2%** | · | NTRA 나테라, INSM 인스메드, TSM TSMC |
+| 5 | · | 프렘 왓사 | **+35.0%** | · | OLA.TO Orla Mining, ELD.TO Eldorado Gold, KHC 크래프트하인즈 |
+| 6 | · | 스티브 코언 | **+33.4%** | · | NONE WEC Energy, SPY S&P500 ETF, CRDO 크레도 |
+| 7 | · | 알렉스 데너 | **+30.0%** | · | INVA 이노비바, IRWD 아이언우드, AMRN 아마린 |
+| 8 | · | 리 에인슬리 | **+28.9%** | · | NU 누홀딩스, NVDA 엔비디아, AMD AMD |
+| 9 | · | 브루스 버코위츠 | **+27.9%** | · | JOE 세인트조, EPD 엔터프라이즈프로덕츠, OZK 뱅크OZK |
+| 10 | · | 빌 밀러 | **+24.9%** | · | NBR 네이버스, GTN 그레이미디어, SPUU Direxion Shares ETF |
+| 11 | · | 폴 힐랄 | **+24.6%** | · | DLTR 달러트리 |
+| 12 | · | 리루 | **+22.9%** | · | GOOGL 알파벳 A, GOOG 알파벳 C, BRK-B Berkshire Hathaway |
+| 13 | · | 폴 튜더 존스 | **+21.6%** | · | IWM 러셀2000 ETF, QQQ 나스닥100 ETF, TSM TSMC |
+| 14 | · | 조지 소로스 | **+21.5%** | · | NONE Global Pmts, TSM TSMC, NVDA 엔비디아 |
+| 15 | · | 레이 달리오 | **+21.3%** | · | SPY S&P500 ETF, IVV iShares S&P500, NVDA 엔비디아 |
+| 16 | · | 조엘 그린블랫 | **+19.7%** | · | SPY S&P500 ETF, AAPL 애플, NVDA 엔비디아 |
+| 17 | · | 존 오버덱 | **+19.7%** | · | NONE Western Digital, AMZN 아마존, NVDA 엔비디아 |
+| 18 | · | 이지 잉글랜더 | **+18.9%** | · | IWM 러셀2000 ETF, IVV iShares S&P500, SPY S&P500 ETF |
+| 19 | · | 빌 나이그렌 | **+18.6%** | · | KDP 큐리그닥터페퍼, ABNB 에어비앤비, CRM 세일즈포스 |
+| 20 | · | 안드레아스 할보르센 | **+18.6%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 
 ---
 
