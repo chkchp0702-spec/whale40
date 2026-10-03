@@ -584,6 +584,27 @@ def yahoo_raw(sym: str, ua: str):
     return None, last if 'last' in dir() else "요청 실패"
 
 
+_yf_stat = {"fresh": 0, "cache": 0}
+
+
+def price_staleness():
+    """주가가 며칠 묵었나. SPY 마지막 날짜와 '어제까지의 마지막 미국 거래일'을 비교 (주말만 감안, 공휴일은 1일 지연으로 보임).
+    반환 (마지막 날짜, 지연 거래일 수, 야후 실패 종목 수)."""
+    spy = yahoo_prices("SPY")
+    if not spy:
+        return None, 0, _yf_stat["cache"]
+    last = max(spy)
+    d = date.today() - timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    lag, cur = 0, date.fromisoformat(last)
+    while cur < d:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            lag += 1
+    return last, lag, _yf_stat["cache"]
+
+
 def yahoo_prices(sym: str, debug: bool = False) -> dict[str, float]:
     """주가 일별 종가. User-Agent를 바꿔가며 통과하는 것을 찾아 고정한다."""
     f = CACHE / "px" / f"{sym}.json"
@@ -628,6 +649,9 @@ def yahoo_prices(sym: str, debug: bool = False) -> dict[str, float]:
     yahoo_prices.last_notes = notes
     if not px and b:
         px, vol = b["px"], b.get("vol", {})
+        _yf_stat["cache"] += 1               # 야후가 안 줘서 어제 캐시로 버틴 종목 수
+    elif px:
+        _yf_stat["fresh"] += 1
     if debug:
         for n in notes:
             log(f"    [debug] {n}")
@@ -921,17 +945,46 @@ def fund_quarters(w, n=6):
     return out
 
 
-def crowd_analysis(watch):
+FUND_STYLE = {}      # 4.3 ② 고래 스타일 태그 {이름: "장기 집중형"} — crowd_analysis가 채운다
+FUND_STATS = {}      # {이름: {"turnover", "top10w", "n"}}
+
+
+def fund_style(qs):
+    """분기별 보유로 스타일을 읽는다. 회전율 = 분기마다 바뀐 종목 비율, 집중도 = 상위 10종목 비중 합."""
+    if not qs:
+        return "", {}
+    cur = qs[0][2]
+    tot = sum(h["value"] for h in cur.values()) or 1.0
+    top10w = sum(sorted((h["value"] for h in cur.values()), reverse=True)[:10]) / tot
+    turns = []
+    for i in range(len(qs) - 1):
+        a, b = set(qs[i][2]), set(qs[i + 1][2])
+        if a and b:
+            turns.append(len(a ^ b) / max(1, len(a | b)))
+    turnover = sum(turns) / len(turns) if turns else None
+    hold = "장기" if turnover is not None and turnover <= 0.18 else ("회전" if turnover is not None and turnover >= 0.45 else "")
+    conc = "집중" if top10w >= 0.6 else ("분산" if top10w <= 0.3 else "")
+    tag = (f"{hold} {conc}".strip() or "균형") + "형"
+    return tag, {"turnover": turnover, "top10w": top10w, "n": len(cur)}
+
+
+def crowd_analysis(watch, rel=None):
     """40곳의 최신·직전 분기를 비교해 종목별 집단 움직임을 집계한다.
-    반환: {sym: {name, holders, new, exit, add, cut, shares, value}}"""
+    반환: {sym: {name, holders, new, exit, add, cut, shares, value}}
+    rel: 4.3 ① 고래별 신뢰 배수 {이름: 0.8~1.2} — 과거 큰 신규 포지션 적중률에서 나온다."""
     agg, names, buys = {}, {}, {}
     hist = jload(DATA / "history.json", {}) or {}
     sig = jload(DATA / "signals.json", {}) or {}     # 분기별 '큰 신규 포지션' 이력 (백테스트용)
+    rel = rel or {}
 
     for w in watch:
         qs = fund_quarters(w, 6)
         if not qs:
             continue
+        try:
+            FUND_STYLE[w["name"]], FUND_STATS[w["name"]] = fund_style(qs)
+        except Exception:
+            pass
         # 분기별 누적 이력 (그래프용)
         for quarter, filed, hs in qs:
             slot = hist.setdefault(quarter, {})
@@ -946,6 +999,7 @@ def crowd_analysis(watch):
 
         # 펀드 품질 가중치: 수익률 순위가 높을수록 그 펀드의 한 표가 무겁다 (1.0 ~ 2.5)
         qw = 1.0 + 1.5 * max(0.0, 1 - (w.get("rank", TOP_N) - 1) / max(1, TOP_N))
+        qw *= rel.get(w["name"], 1.0)        # 4.3 ① 적중률 높은 고래의 표가 더 무겁다 (0.8~1.2배)
 
         is_quant = bool(w.get("quant"))
         # 분기별 주식수 변화 → 고래 평균 매입단가 추정용 (오래된 분기부터). 로트마다 13F 내재가격을 함께 남긴다.
@@ -2177,31 +2231,46 @@ def balance_bio(rows, top_n):
     return picked
 
 
+SCORE_BASE = {"big": 30, "wscore": 20, "contra": 15, "cost": 15, "ins": 10, "cluster": 10}   # 고래 점수 기본 가중치
+SCORE_W = dict(SCORE_BASE)        # 실제 쓰는 가중치 — 분기 검증 결과로 보정된다 (tune_weights)
+RUNUP_PCT = 30                    # 분기말 대비 이만큼 올랐으면 '이미 올랐다' 감점
+CHEAPER_PCT = -10                 # 분기말보다 이만큼 싸면 가점
+
+
 def whale_score(a, c, big_row=None, ins_row=None):
     """0~100 고래 점수. 흩어진 신호를 하나로. 근거 목록을 함께 돌려준다."""
     s, why = 0.0, []
+    W = SCORE_W
     if big_row:
-        pts = min(30, 12 + 6 * big_row["big_n"] + min(6, big_row.get("big_sum", 0) / 2))
+        pts = min(W["big"], (12 + 6 * big_row["big_n"] + min(6, big_row.get("big_sum", 0) / 2)) * W["big"] / 30)
         s += pts; why.append(("큰 신규", f"{big_row['big_n']}곳 · 포트 {BIG_WEIGHT:.0f}%+"))
     w = a.get("wscore", 0) or 0
     if w > 0:
-        pts = min(20, w * 2.5); s += pts; why.append(("가중 순증감", f"{w:+.1f}"))
+        pts = min(W["wscore"], w * 2.5 * W["wscore"] / 20); s += pts; why.append(("가중 순증감", f"{w:+.1f}"))
     elif w < 0:
         s -= min(15, -w * 2)
     r1y = c.get("ret_1y")
     if r1y is not None and a.get("score", 0) > 0 and r1y < 0:
-        pts = min(15, 6 + a["score"] * 1.5); s += pts; why.append(("역행 매수", f"1년 {r1y:+.0f}% · 순증감 {a['score']:+d}"))
+        pts = min(W["contra"], (6 + a["score"] * 1.5) * W["contra"] / 15); s += pts
+        why.append(("역행 매수", f"1년 {r1y:+.0f}% · 순증감 {a['score']:+d}"))
     if a.get("cost_basis") and c.get("last"):
         gap = (c["last"] / a["cost_basis"] - 1) * 100
         if gap <= -5:
-            pts = min(15, -gap / 3); s += pts; why.append(("평단 아래", f"고래 평단 대비 {gap:+.0f}%"))
+            pts = min(W["cost"], -gap / 3 * W["cost"] / 15); s += pts; why.append(("평단 아래", f"고래 평단 대비 {gap:+.0f}%"))
         elif gap >= 40:
             s -= 5
+    # 4.3 ④ 이미 올랐나 — 고래가 산 분기말 가격과 지금의 거리
+    vq = c.get("vs_qe")
+    if vq is not None:
+        if vq >= RUNUP_PCT:
+            s -= 8; why.append(("이미 올랐다", f"분기말 대비 {vq:+.0f}%"))
+        elif vq <= CHEAPER_PCT:
+            s += 6; why.append(("분기말보다 싸다", f"{vq:+.0f}%"))
     if ins_row:
-        pts = min(10, 4 + (ins_row.get("ins_value") or 0) / 1e6 * 3); s += pts
+        pts = min(W["ins"], (4 + (ins_row.get("ins_value") or 0) / 1e6 * 3) * W["ins"] / 10); s += pts
         why.append(("임원 매수", f"${ins_row['ins_value']:,.0f}"))
     if a.get("cluster", 0) >= 3:
-        pts = min(10, a["cluster"] * 2); s += pts; why.append(("동시 편입", f"{a['cluster']}곳"))
+        pts = min(W["cluster"], a["cluster"] * 2 * W["cluster"] / 10); s += pts; why.append(("동시 편입", f"{a['cluster']}곳"))
     if (a.get("streak") or 0) <= -2:
         s -= 10; why.append(("연속 이탈", f"{abs(a['streak'])}분기"))
     if c.get("ret_1d") is not None and c["ret_1d"] >= 3 and (c.get("vol_ratio") or 0) >= 2:
@@ -2481,6 +2550,415 @@ def earnings_hero(earn, min_hold=3):
              and r.get("ret_1y") is not None]
     cands.sort(key=lambda r: (r["dday"], -r["n_hold"]))
     return cands[0] if cands else None
+
+
+# ══════════════════════════════ 4.3 — 신호 품질 · 행동 · 검증 · 고래 선별
+REL_MIN_N = 3                 # 신뢰 배수를 매기려면 과거 큰 신규 신호가 이만큼은 있어야
+WEIGHTS_FILE = DATA / "weights.json"
+FOLLOW_FILE = DATA / "follow.json"
+
+
+def fund_reliability(lag_q=2):
+    """4.3 ① 믿을 만한 고래 — signals.json의 과거 '큰 신규 포지션'이 그 뒤 지수를 이겼나, 고래별로.
+    반환 (표용 rows, 배수 {이름: 0.8~1.2}). 최신 분기는 결과를 알 수 없으니 lag_q 분기 전까지만 본다."""
+    sig = jload(DATA / "signals.json", {}) or {}
+    qs = sorted([q for q in sig if qsort_key(q) != (0, 0)], key=qsort_key)
+    if len(qs) <= lag_q:
+        return [], {}
+    spy = yahoo_prices("SPY")
+    if not spy:
+        return [], {}
+    sp_now = spy[sorted(spy)[-1]]
+    per = {}
+    for q in qs[:-lag_q]:
+        qe = quarter_end(q)
+        sp0 = px_at(spy, qe) if qe else None
+        if not sp0:
+            continue
+        bench = (sp_now / sp0 - 1) * 100
+        for sym, s in sig[q].items():
+            px = yahoo_prices(sym)
+            if len(px) < 30:
+                continue
+            p0 = px_at(px, qe); p1 = px[sorted(px)[-1]]
+            if not p0:
+                continue
+            alpha = (p1 / p0 - 1) * 100 - bench
+            for name in s.get("by", []):
+                d = per.setdefault(name, {"name": name, "n": 0, "win": 0, "alpha": 0.0, "best": None})
+                d["n"] += 1; d["win"] += alpha > 0; d["alpha"] += alpha
+                if d["best"] is None or alpha > d["best"][1]:
+                    d["best"] = (sym, alpha)
+    rows, mult = [], {}
+    for d in per.values():
+        if d["n"] < REL_MIN_N:
+            continue
+        avg = d["alpha"] / d["n"]; win = d["win"] / d["n"] * 100
+        m = max(0.8, min(1.2, 1 + avg / 100))
+        mult[d["name"]] = round(m, 2)
+        rows.append({**d, "avg": avg, "winp": win, "mult": m})
+    rows.sort(key=lambda r: (-r["avg"], -r["n"]))
+    return rows, mult
+
+
+def boundary_rows(inst, ppl, n=3):
+    """4.3 ③ 40곳 경계선 — 감시 TOP 20 가장자리에 있는 곳. 곧 빠질 n곳과 곧 들어올 n곳, 1년 수익률 차이."""
+    out = {}
+    for rows, g in ((inst, "기관"), (ppl, "유명인")):
+        if len(rows) <= TOP_N:
+            continue
+        line = rows[TOP_N - 1]["ret_1y"]
+        out[g] = {"out": [{**r, "gap": r["ret_1y"] - rows[TOP_N]["ret_1y"]} for r in rows[TOP_N - n:TOP_N]],
+                  "in": [{**r, "gap": r["ret_1y"] - line} for r in rows[TOP_N:TOP_N + n]]}
+    return out
+
+
+def trend_tag(sym, c=None):
+    """4.3 ⑤ 역행 매수 종목의 추세. '하락 중'(50일선 아래·저점 낮아짐) / '바닥 다짐'(50일선 아래지만 20일 저점이 높아짐) / '반등 시작'(50일선 위)."""
+    px = yahoo_prices(sym); ks = sorted(px)
+    if len(ks) < 60:
+        return ""
+    cl = [px[k] for k in ks]
+    last = cl[-1]; ma50 = sum(cl[-50:]) / 50
+    lo_now, lo_prev = min(cl[-20:]), min(cl[-40:-20])
+    if last > ma50:
+        return "반등 시작"
+    if lo_now > lo_prev:
+        return "바닥 다짐"
+    return "하락 중"
+
+
+def split_rows(agg, pc, n=6):
+    """4.3 ⑥ 의견 갈림 — 편입도 편출도 많은 종목. 순증감 숫자에 묻히는 '고래들의 싸움'."""
+    rows = []
+    for a in agg.values():
+        if a["n_in"] >= 3 and a["n_out"] >= 3:
+            ranks = a.get("holder_ranks") or {}
+            buyers = sorted(a.get("new", []) + a.get("add", []), key=lambda x: ranks.get(x, 99))
+            sellers = list(a.get("exit", [])) + list(a.get("cut", []))
+            rows.append({**a, **pc.get(a["sym"], {}), "buyers": buyers[:3], "sellers": sellers[:3],
+                         "heat": min(a["n_in"], a["n_out"])})
+    rows.sort(key=lambda r: (-r["heat"], -r["n_hold"]))
+    return rows[:n]
+
+
+def switch_rows(watch, n=8, min_w=1.0):
+    """4.3 ⑦ 갈아타기 — 같은 고래가 같은 분기에 같은 섹터 안에서 A를 전량 팔고 B를 새로 샀다."""
+    pairs = []
+    syms = set()
+    per = []
+    for w in watch:
+        if w.get("quant"):
+            continue
+        qs = fund_quarters(w, 2)
+        if len(qs) < 2:
+            continue
+        cur, prev = qs[0][2], qs[1][2]
+        tc = sum(h["value"] for h in cur.values()) or 1.0
+        tp = sum(h["value"] for h in prev.values()) or 1.0
+        sold = {s: prev[s]["value"] / tp * 100 for s in prev if s not in cur and prev[s]["value"] / tp * 100 >= min_w}
+        bought = {s: cur[s]["value"] / tc * 100 for s in cur if s not in prev and cur[s]["value"] / tc * 100 >= min_w}
+        if sold and bought:
+            per.append((w, sold, bought)); syms |= set(sold) | set(bought)
+    if not per:
+        return []
+    sec = sectors_for(sorted(syms))
+    types = (jload(SECTOR_FILE, {}) or {}).get("_type", {}) or {}
+    for w, sold, bought in per:
+        by_sec = {}
+        for s, ws in sold.items():
+            if sec.get(s) not in (None, "기타", "ETF") and not is_junk(s, "", None, None, types):
+                by_sec.setdefault(sec[s], ([], []))[0].append((ws, s))
+        for b, wb in bought.items():
+            if sec.get(b) not in (None, "기타", "ETF") and not is_junk(b, "", None, None, types):
+                by_sec.setdefault(sec[b], ([], []))[1].append((wb, b))
+        for k, (so, bo) in by_sec.items():
+            # 같은 섹터 안에서 큰 것끼리 1:1로 짝짓는다 (교차곱이 아니라)
+            for (ws, s), (wb, b) in zip(sorted(so, reverse=True), sorted(bo, reverse=True)):
+                pairs.append({"fund": w["name"], "rank": w.get("rank", 99), "sold": s, "bought": b,
+                              "sector": k, "w_sold": ws, "w_bought": wb})
+    # 같은 A→B 를 여러 곳이 했으면 합친다
+    merged = {}
+    for p in pairs:
+        k = (p["sold"], p["bought"])
+        m = merged.setdefault(k, {**p, "funds": [], "n": 0, "w_bought": 0.0})
+        m["funds"].append(p["fund"]); m["n"] += 1; m["w_bought"] = max(m["w_bought"], p["w_bought"])
+        m["rank"] = min(m["rank"], p["rank"])
+    rows = sorted(merged.values(), key=lambda r: (-r["n"], -r["w_bought"]))
+    return rows[:n]
+
+
+def debut_rows(agg, hist, pc, n=6, min_hold=2):
+    """4.3 ⑧ 첫 등장 — 40곳 어디에도 없다가 최신 분기에 처음 나타난 종목. 가장 이른 신호."""
+    qs = sorted([q for q in hist if qsort_key(q) != (0, 0)], key=qsort_key)
+    if len(qs) < 3:
+        return []
+    latest, earlier = qs[-1], qs[:-1]
+    types = (jload(SECTOR_FILE, {}) or {}).get("_type", {}) or {}
+    rows = []
+    for sym, s in hist[latest].items():
+        if s.get("h", 0) < min_hold:
+            continue
+        if any(hist[q].get(sym, {}).get("h", 0) > 0 for q in earlier):
+            continue
+        a = agg.get(sym)
+        if not a or is_junk(sym, a.get("name", ""), None, None, types):
+            continue
+        c = pc.get(sym, {})
+        if c.get("ret_1y") is None:
+            continue                      # 상장 1년 미만(분사·IPO)은 '발굴'이 아니라 그냥 새 종목
+        rows.append({**a, **c, "debut_h": s["h"], "debut_by": s.get("by", [])[:3], "quarter": latest})
+    rows.sort(key=lambda r: (-r["debut_h"], -r.get("value", 0)))
+    return rows[:n]
+
+
+CHECK_ITEMS = ("평단 아래", "추세", "실적 없음", "고래 증가", "5일 상승")
+
+
+def checklist(r, earn_syms=()):
+    """4.3 ⑨ 살 만한가 5칸. [(항목, 통과 여부, 짧은 근거)] — 평단 아래 · 50일선 위 · 열흘 안 실적 없음 · 편입 우세 · 5일 상승."""
+    sym = r["sym"]
+    px = yahoo_prices(sym); ks = sorted(px)
+    last = px[ks[-1]] if ks else None
+    out = []
+    if r.get("cost_basis") and last:
+        gap = (last / r["cost_basis"] - 1) * 100
+        out.append(("평단 아래", gap < 0, f"{gap:+.0f}%"))
+    else:
+        out.append(("평단 아래", False, "평단 없음"))
+    if len(ks) >= 50 and last:
+        ma50 = sum(px[k] for k in ks[-50:]) / 50
+        out.append(("추세", last > ma50, "50일선 위" if last > ma50 else "50일선 아래"))
+    else:
+        out.append(("추세", False, "자료 부족"))
+    out.append(("실적 없음", sym not in earn_syms, "열흘 안 실적" if sym in earn_syms else "열흘 안 없음"))
+    out.append(("고래 증가", (r.get("score") or 0) > 0, f"순증감 {r.get('score', 0):+d}"))
+    if len(ks) >= 6 and last:
+        up5 = last > px[ks[-6]]
+        out.append(("5일 상승", up5, f"5일 {(last / px[ks[-6]] - 1) * 100:+.1f}%"))
+    else:
+        out.append(("5일 상승", False, "자료 부족"))
+    return out
+
+
+def check_dots(cl):
+    n = sum(1 for _, ok, _ in cl)
+    k = sum(1 for _, ok, _ in cl if ok)
+    return "●" * k + "○" * (n - k), k
+
+
+def stock_states(top, near, warn, checks):
+    """4.3 ⑩ 종목 상태 — 관찰 → 접근 → 매수 검토 / 보유 점검. {sym: 상태}"""
+    st = {}
+    for r in top:
+        st[r["sym"]] = "관찰"
+    for r in near:
+        if r.get("near_kind") in ("평단 근처", "평단 아래로"):
+            st[r["sym"]] = "접근"
+    for sym, (dots, k) in checks.items():
+        if st.get(sym) == "접근" and k >= 4:
+            st[sym] = "매수 검토"
+    for r in warn:
+        st[r["sym"]] = "보유 점검"
+    return st
+
+
+STATE_ORDER = {"관찰": 0, "접근": 1, "매수 검토": 2, "보유 점검": 3}
+
+
+def state_changes(states, prev):
+    """어제와 상태가 달라진 종목. [(sym, 어제, 오늘)] — 올라간 것 먼저."""
+    ps = ((prev or {}).get("signals") or {}).get("state") or {}
+    if not ps:
+        return []
+    out = []
+    for sym, s in states.items():
+        p = ps.get(sym, "")
+        if p != s:
+            out.append((sym, p or "—", s))
+    for sym, p in ps.items():
+        if sym not in states:
+            out.append((sym, p, "해제"))
+    out.sort(key=lambda x: -(STATE_ORDER.get(x[2], -1) - STATE_ORDER.get(x[1], -1)))
+    return out[:8]
+
+
+def action_items(X, warn=(), prev=None):
+    """4.3 ⑪ 오늘 행동 필요 — 진짜 움직여야 하는 것만. [(아이콘, 종류, 티커, 한 줄)]"""
+    X = X or {}
+    out, used = [], set()
+    def add(icon, kind, sym, line):
+        if sym in used:
+            return
+        used.add(sym); out.append((icon, kind, sym, line))
+    for r in X.get("near") or []:
+        if r.get("near_kind") == "평단 아래로":
+            add("💵", "평단 아래로", r["sym"], f"고래 평단 ${r['cost_basis']:,.0f} 아래로 내려옴 ({r['gap']:+.1f}%) · 고래 {r['n_hold']}곳")
+    for sym, p, s in X.get("state_changes") or []:
+        if s == "매수 검토":
+            add("✅", "매수 검토", sym, f"{p} → 매수 검토 (체크리스트 4/5 이상 · 평단 근처)")
+    for r in X.get("rebound") or []:
+        add("🔄", "반전 신호", r["sym"], f"{' · '.join(r['rb'])} · 1년 {r['ret_1y']:+.0f}% · 고래 {r['n_hold']}곳")
+    h = X.get("hero") or {}
+    if h.get("pick", "").endswith("실적"):
+        add("📅", h["pick"], h["sym"], h.get("note", ""))
+    pw = set(((prev or {}).get("signals") or {}).get("warn") or [])
+    for r in warn or []:
+        if r["sym"] not in pw and pw:
+            add("⚠️", "점검 목록 진입", r["sym"], f"{abs(r['streak'])}분기 연속 이탈 · 남은 고래 {r['n_hold']}곳")
+    return out[:6]
+
+
+def follow_report(top, pc):
+    """4.3 ⑫ 따라 샀다면 — 매일 '오늘의 10'을 동일비중으로 들고 다음 날 갈아탔다면. 날짜별 수익률을 follow.json에 쌓는다.
+    오늘 값 = 어제 오늘의 10 종목의 어제→오늘 등락 평균. 어제 명단은 days/ 파일에서."""
+    f = jload(FOLLOW_FILE, {}) or {}
+    today = date.today().isoformat()
+    # 어제 명단
+    prev_top = None
+    if DAYDIR.exists():
+        cands = sorted(p.stem for p in DAYDIR.glob("*.json") if p.stem < today)
+        for d in reversed(cands):
+            s = ((jload(DAYDIR / f"{d}.json", {}) or {}).get("signals") or {}).get("top10")
+            if s:
+                prev_top = (d, s); break
+    spy = yahoo_prices("SPY")
+    if prev_top and spy and today not in f:
+        d0, syms = prev_top
+        ks = sorted(spy)
+        # 어제 리포트(d0, 한국 아침)는 그 전날 미국 종가까지 반영 → 시작점은 d0 전날 이하의 마지막 거래일
+        last, before = ks[-1], px_at_key(spy, (date.fromisoformat(d0) - timedelta(days=1)).isoformat())
+        if before and before < last:
+            rs = []
+            for s in syms:
+                px = yahoo_prices(s)
+                p0, p1 = px.get(before) or px_at(px, before), px.get(last) or px_at(px, last)
+                if p0 and p1:
+                    rs.append(p1 / p0 - 1)
+            if rs:
+                f[today] = {"from": before, "to": last, "ret": sum(rs) / len(rs) * 100,
+                            "spy": (spy[last] / spy[before] - 1) * 100, "n": len(rs), "syms": syms}
+                jsave(FOLLOW_FILE, f)
+    # 누적 — 같은 거래일(to)이 겹치면 한 번만 센다
+    seen, cum, cum_s, n = set(), 1.0, 1.0, 0
+    for d in sorted(f):
+        e = f[d]
+        if e.get("to") in seen:
+            continue
+        seen.add(e["to"]); cum *= 1 + e["ret"] / 100; cum_s *= 1 + e["spy"] / 100; n += 1
+    if not n:
+        return None
+    last = f[sorted(f)[-1]]
+    return {"days": n, "cum": (cum - 1) * 100, "spy": (cum_s - 1) * 100, "alpha": (cum - cum_s) * 100,
+            "last": last["ret"], "last_spy": last["spy"], "since": f[sorted(f)[0]]["from"]}
+
+
+def px_at_key(px, day):
+    ks = [k for k in px if k <= day]
+    return max(ks) if ks else None
+
+
+def tune_weights(bt):
+    """4.3 ⑬ 가중치 자동 보정 — 구역별 검증(2분기 전)의 지수 대비 성적으로 큰 신규·역행 가중치를 ±25% 안에서 조정.
+    분기가 바뀔 때만 다시 계산하고 이유를 weights.json에 남긴다. SCORE_W를 갱신하고 설명 dict를 돌려준다."""
+    saved = jload(WEIGHTS_FILE, {}) or {}
+    if not bt or not bt.get("zones"):
+        SCORE_W.update(saved.get("weights") or {})
+        return saved or None
+    if saved.get("quarter") == bt.get("quarter") and saved.get("weights"):
+        SCORE_W.update(saved["weights"])
+        return saved
+    bench = bt.get("bench") or 0
+    w, notes = dict(SCORE_BASE), []
+    for zone, key, label in (("bigbuy", "big", "큰 신규"), ("contra", "contra", "역행 매수")):
+        z = bt["zones"].get(zone)
+        if not z or z["n"] < 8:
+            notes.append(f"{label}: 표본 {z['n'] if z else 0}개라 그대로")
+            continue
+        alpha = z["avg"] - bench
+        f = max(0.75, min(1.25, 1 + alpha / 100))
+        w[key] = int(round(SCORE_BASE[key] * f))
+        notes.append(f"{label}: {bt['quarter']} 표본 {z['n']}개 지수 대비 {alpha:+.0f}%p → {SCORE_BASE[key]}→{w[key]}")
+    out = {"quarter": bt["quarter"], "weights": w, "notes": notes, "asof": date.today().isoformat()}
+    jsave(WEIGHTS_FILE, out)
+    SCORE_W.update(w)
+    return out
+
+
+def basket_1y(picks):
+    """동일비중 바구니의 1년 수익률(%)과 S&P 대비. 종목 절반 이상 가격이 있어야."""
+    start = (date.today() - timedelta(days=365)).isoformat()
+    rs = []
+    for s in picks:
+        px = yahoo_prices(s)
+        if not px:
+            continue
+        ks = sorted(px); p0 = px_at(px, start); p1 = px[ks[-1]]
+        if p0 and p1:
+            rs.append(p1 / p0 - 1)
+    if len(rs) < max(3, len(picks) // 2):
+        return None
+    return sum(rs) / len(rs) * 100
+
+
+def index_trio(idx, big, Q):
+    """4.3 ⑭ 고래 인덱스 3종 — 컨빅션 TOP10 · 큰 신규 TOP10 · 역행 TOP10 동일비중 1년. [(이름, 색, picks, r1y)]"""
+    out = []
+    if idx and idx.get("picks"):
+        out.append(("컨빅션", "#1f7a4d", idx["picks"], idx.get("r1y")))
+    pb = [r["sym"] for r in list(big)[:10]]
+    if len(pb) >= 3:
+        out.append(("큰 신규", "#c2740a", pb, basket_1y(pb)))
+    pcn = [r["sym"] for r in (Q or {}).get("contra", [])[:10]]
+    if len(pcn) >= 3:
+        out.append(("역행 매수", "#2b5f9e", pcn, basket_1y(pcn)))
+    return out
+
+
+def svg_stock_story(sym, a, hist, px, w=340, h=120):
+    """4.3 ⑮ 종목의 고래 이야기 — 1년 주가 위에 분기별 고래 수 변화(▲▼), 고래 평단 선, 실적일."""
+    ks = sorted(px)
+    start = (date.today() - timedelta(days=365)).isoformat()
+    days = [k for k in ks if k >= start]
+    if len(days) < 30:
+        return ""
+    vals = [px[k] for k in days]
+    L, R, T, B = 6, 6, 14, 16
+    x0, y0, ww, hh = L, T, w - L - R, h - T - B
+    lo, hi = min(vals) * .97, max(vals) * 1.03
+    cb = a.get("cost_basis")
+    if cb and lo * .8 < cb < hi * 1.2:
+        lo, hi = min(lo, cb * .98), max(hi, cb * 1.02)
+    X = lambda d: x0 + max(0, min(1, (date.fromisoformat(d) - date.fromisoformat(days[0])).days / max(1, (date.fromisoformat(days[-1]) - date.fromisoformat(days[0])).days))) * ww
+    Y = lambda v: y0 + (hi - v) / (hi - lo) * hh
+    o = [f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Noto Sans KR,sans-serif">']
+    pts = " ".join(f"{X(d):.1f},{Y(v):.1f}" for d, v in zip(days, vals))
+    o.append(f'<polyline points="{pts}" fill="none" stroke="#171614" stroke-width="1.6"/>')
+    if cb and lo <= cb <= hi:
+        o.append(f'<line x1="{x0}" x2="{x0 + ww}" y1="{Y(cb):.1f}" y2="{Y(cb):.1f}" stroke="#2b5f9e" stroke-dasharray="4 3" stroke-width="1.2"/>')
+        o.append(f'<text x="{x0 + ww}" y="{Y(cb) - 3:.1f}" text-anchor="end" font-size="9" fill="#2b5f9e">고래 평단 ${cb:,.0f}</text>')
+    ser = series_of(hist, sym, "h")
+    for i in range(1, len(ser)):
+        q, hv = ser[i]; d = quarter_end(q)
+        if not d or d < days[0] or d > days[-1]:
+            continue
+        dh = hv - ser[i - 1][1]
+        if dh == 0:
+            continue
+        col = "#c0392b" if dh > 0 else "#1d6fb8"
+        py = Y(px_at(px, d) or vals[-1])
+        tri = f"{X(d):.1f},{py - 9:.1f} {X(d) - 4:.1f},{py - 2:.1f} {X(d) + 4:.1f},{py - 2:.1f}" if dh > 0 else f"{X(d):.1f},{py + 9:.1f} {X(d) - 4:.1f},{py + 2:.1f} {X(d) + 4:.1f},{py + 2:.1f}"
+        o.append(f'<polygon points="{tri}" fill="{col}"/>')
+        o.append(f'<text x="{X(d):.1f}" y="{(py - 11) if dh > 0 else (py + 18):.1f}" text-anchor="middle" font-size="8.5" font-weight="700" fill="{col}">{dh:+d}</text>')
+        o.append(f'<text x="{X(d):.1f}" y="{h - 4}" text-anchor="middle" font-size="8" fill="#6c6862">{_h(q.replace(" 20", "’"))}</text>')
+    e = (jload(EARN_FILE, {}) or {}).get(sym)
+    ed = e.get("d") if isinstance(e, dict) else (e if isinstance(e, str) else None)
+    if ed and days[0] <= ed <= days[-1]:
+        o.append(f'<line x1="{X(ed):.1f}" x2="{X(ed):.1f}" y1="{y0}" y2="{y0 + hh}" stroke="#b3312a" stroke-dasharray="2 2"/>')
+        o.append(f'<text x="{X(ed) + 2:.1f}" y="{y0 + 8}" font-size="8" fill="#b3312a">실적</text>')
+    o.append(f'<text x="{x0}" y="{y0 - 4}" font-size="8.5" fill="#6c6862">1년 주가 · ▲▼ 분기별 고래 수 변화 · 점선 고래 평단</text>')
+    o.append("</svg>")
+    return "".join(o)
 
 
 # ══════════════════════════════════════════ 전일 대비 변화 (색상 표시용)
@@ -3645,6 +4123,8 @@ def hero_pick(Q, mov, clus, cost, warn, idx, big=(), ins=()):
 def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, disc, conv,
                      mov, secs, idx, live, clus, cost, warn, earn, bt, big=(), ins=(), X=None):
     X = X or {}
+    trend = X.get("trend") or {}
+    TRC = {"하락 중": "var(--hot)", "바닥 다짐": "var(--warn)", "반등 시작": "var(--go)"}
     today = date.today().isoformat()
     wd = "월화수목금토일"[date.today().weekday()]
     nxt, dday = next_13f_deadline()
@@ -3750,7 +4230,8 @@ def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, di
         t, d, act, cl = ZONE[k]
         inner = "".join(
             f'<li><b>{_h(r["sym"])}</b> <span class="nm">{_h(label_only(r["sym"], r["name"])[:14])}</span>'
-            f'<em class="{_cls(r["ret_1y"])}">{_pc(r["ret_1y"], 0)}</em>'
+            + (f'<span class="trt" style="color:{TRC.get(trend[r["sym"]], "inherit")}">{_h(trend[r["sym"]])}</span>' if k == "contra" and trend.get(r["sym"]) else "")
+            + f'<em class="{_cls(r["ret_1y"])}">{_pc(r["ret_1y"], 0)}</em>'
             f'<span class="sc">{r["score"]:+d}</span></li>' for r in rows)
         zcards.append(f'<div class="zone {cl}"><div class="zt">{_h(t)}<span>{_h(act)}</span></div>'
                       f'<p class="zd">{_h(d)}</p><ul class="zl">{inner or "<li class=e>해당 없음</li>"}</ul></div>')
@@ -3779,11 +4260,25 @@ def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, di
     eres = X.get("eres") or []; hero_rows = X.get("hero_rows") or []; hs = X.get("hero_summ") or {}
     near = X.get("near") or []; rebound = X.get("rebound") or []
     fday = X.get("fday") or []; sday = X.get("sday") or []; moves = X.get("moves") or {}
+    trend = X.get("trend") or {}; split = X.get("split") or []; switch = X.get("switch") or []
+    debut = X.get("debut") or []; checks = X.get("checks") or {}; st_chg = X.get("state_changes") or []
+    follow = X.get("follow"); trio = X.get("trio") or []; bound = X.get("bound") or {}
+    rel_rows = X.get("rel") or []; wts = X.get("wts"); actions = X.get("actions") or []
+    TRC = {"하락 중": "var(--hot)", "바닥 다짐": "var(--warn)", "반등 시작": "var(--go)"}
+    def mdots(sym):
+        d = checks.get(sym)
+        if not d:
+            return ""
+        dots, k = d
+        return f'<span class="d5" style="color:{"var(--go)" if k >= 4 else "var(--warn)" if k == 3 else "var(--mut)"}">{dots}</span>'
     zone_of = {r["sym"]: k for k in Q for r in Q[k]}
     top_html = ""
     for i, r in enumerate(top[:10], 1):
         z = zone_of.get(r["sym"], "contra"); cl = ZONE[z][3]
         chips = "".join(f'<span class="kv"><i>{_h(k)}</i><em>{_h(v)}</em></span>' for k, v in r["why"][:4])
+        if z == "contra" and trend.get(r["sym"]):
+            chips += f'<span class="kv"><i>추세</i><em style="color:{TRC.get(trend[r["sym"]], "inherit")}">{_h(trend[r["sym"]])}</em></span>'
+        chips += (f'<span class="kv"><i>살 만한가</i><em>{mdots(r["sym"])}</em></span>' if checks.get(r["sym"]) else "")
         m = moves.get(r["sym"]) or {}
         if m.get("new"):
             mv_html = '<span class="mv new">NEW</span>'
@@ -3821,14 +4316,54 @@ def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, di
         sday_html = '<div class="bars">' + "".join(
             f'<div class="bar"><i>{_h(s["sector"])}</i><div class="track"><span class="{"pos" if s["ret_1d"] > 0 else "neg"}" style="width:{abs(s["ret_1d"]) / mxs * 100:.0f}%"></span></div>'
             f'<em class="{_cls(s["ret_1d"])}">{s["ret_1d"]:+.1f}%</em></div>' for s in sday[:8]) + "</div>"
+    # ── 4.3 블록 (모바일) ──
+    if actions:
+        act_html = ('<div class="acts"><i>⚡ 오늘 행동 필요</i>' + "".join(
+            f'<div class="act">{icon} <b>{_h(sym)}</b> <em>{_h(kind)}</em><div class="sub">{_h(line)}</div></div>' for icon, kind, sym, line in actions[:5]) + '</div>')
+    else:
+        act_html = '<div class="acts none"><i>오늘 행동 필요</i> 없음 — 오늘은 지켜보는 날입니다</div>'
+    SC = {"관찰": "var(--mut)", "접근": "var(--warn)", "매수 검토": "var(--go)", "보유 점검": "var(--hot)"}
+    st_html = "".join(f'<div class="row"><div class="rh"><a class="sl" href="s/{_h(sym)}.html"><b>{_h(sym)}</b></a> '
+                      f'<span style="color:{SC.get(p, "var(--mut)")}">{_h(p)}</span> → <b style="color:{SC.get(ns, "var(--mut)")}">{_h(ns)}</b> {mdots(sym)}</div></div>'
+                      for sym, p, ns in st_chg[:8])
+    fl_html = ""
+    if follow:
+        f = follow
+        fl_html = (f'<div class="kpis"><div class="kpi"><i>누적 {f["days"]}거래일</i><b class="{_cls(f["cum"])}">{f["cum"]:+.1f}%</b></div>'
+                   f'<div class="kpi"><i>S&amp;P500</i><b class="{_cls(f["spy"])}">{f["spy"]:+.1f}%</b></div>'
+                   f'<div class="kpi"><i>지수 대비</i><b class="{_cls(f["alpha"])}">{f["alpha"]:+.1f}%p</b></div>'
+                   f'<div class="kpi"><i>어제</i><b class="{_cls(f["last"])}">{f["last"]:+.2f}%</b></div></div>')
+    bd_html = ""
+    for g, d in bound.items():
+        bd_html += (f'<div class="two"><div><h3>{_h(g)} · 곧 빠질 곳</h3><ol class="rk">' + "".join(
+            f'<li><span>{_h(short_fund(r["name"])[:16])}<small>{r["rank"]}위 · 여유 {r["gap"]:+.1f}p</small></span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>' for r in d["out"])
+            + f'</ol></div><div><h3>{_h(g)} · 곧 들어올 곳</h3><ol class="rk">' + "".join(
+            f'<li><span>{_h(short_fund(r["name"])[:16])}<small>{r["rank"]}위 · 부족 {r["gap"]:+.1f}p</small></span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>' for r in d["in"]) + '</ol></div></div>')
+    w_note = ""
+    if wts and wts.get("weights"):
+        w = wts["weights"]
+        w_note = (f'<p class="note">점수 가중치 — 큰 신규 {w["big"]} · 가중 순증감 {w["wscore"]} · 역행 {w["contra"]} · 평단 아래 {w["cost"]} · 임원 {w["ins"]} · 동시 편입 {w["cluster"]}'
+                  + ("" if w == SCORE_BASE else " · " + _h(" / ".join(wts.get("notes") or []))) + '</p>')
     body = [
         f'<header><div class="ttl">고래 40</div>'
         f'<div class="date">{date.today().strftime("%Y년 %m월 %d일")} ({wd})</div></header>',
         (sect("season", "오늘 새로 공시한 고래", "13F 시즌 — 이 펀드들의 최신 분기 보유가 방금 공개됐습니다.", season_html) if season else ""),
         f'<div class="kpis">{kpi_html}</div>',
+        act_html,
         (f'<div class="newstrip"><i>어제 없던 신호</i>{new_html}</div>' if new_sig else ""),
         hero_html,
         (sect("top", "오늘의 10", "고래 점수 0~100 — 큰 신규·가중 순증감·역행·평단·임원 매수·동시 편입을 하나로. 티커를 누르면 종목 페이지. 화살표는 어제 대비 순위.", top_html) if top else ""),
+        (sect("states", "종목 상태 전이", "관찰 → 접근(평단 ±5%) → 매수 검토(체크 4/5+) / 보유 점검. 어제와 달라진 것만.", st_html) if st_html else ""),
+        (sect("debut", "첫 등장 종목", f"40곳 어디에도 없다가 {debut[0]['quarter']}에 처음 나타난 것. 가장 이른 신호.",
+              card_rows(debut[:6], lambda r: [("든 곳", f'{r["debut_h"]}곳', ""), ("누가", " · ".join(short_fund(x) for x in r["debut_by"][:2]), ""),
+                                              ("1년", _pc(r.get("ret_1y"), 0), _cls(r.get("ret_1y")))])) if debut else ""),
+        (sect("split", "의견 갈림", "편입도 편출도 3곳 이상 — 순증감에 묻히는 고래들의 싸움.",
+              card_rows(split[:6], lambda r: [("산 곳", f'{r["n_in"]} · ' + " · ".join(short_fund(x) for x in r["buyers"][:2]), "up"),
+                                              ("판 곳", f'{r["n_out"]} · ' + " · ".join(short_fund(x) for x in r["sellers"][:2]), "down"),
+                                              ("1년", _pc(r.get("ret_1y"), 0), _cls(r.get("ret_1y")))])) if split else ""),
+        (sect("switch", "갈아타기", "같은 고래가 같은 분기에 같은 섹터 안에서 A를 팔고 B를 샀다. 돈이 옮겨간 방향.",
+              "".join(f'<div class="row"><div class="rh"><b class="down">{_h(r["sold"])}</b> → <b class="up">{_h(r["bought"])}</b> <span class="nm">{_h(r["sector"])}</span></div>'
+                      f'<div class="sub">{_h(" · ".join(short_fund(x) for x in r["funds"][:3]))}{" 등 " + str(r["n"]) + "곳" if r["n"] > 3 else ""} · 새 비중 {r["w_bought"]:.1f}%</div></div>' for r in switch[:8])) if switch else ""),
         (sect("fday", "어제의 고래", "최신 13F 보유를 복제한 하루 성적 추정치. 매일 바뀝니다.", fday_html) if fday_html else ""),
         (sect("sday", "어제 섹터 흐름", "고래 3곳 이상 보유 종목을 섹터로 묶은 동일비중 등락.", sday_html) if sday_html else ""),
         (sect("near", "오늘 고래 평단 근처", f"평단 ±{NEAR_COST_PCT:.0f}% 안에 왔거나 어제→오늘 평단을 넘은 종목. 고래와 비슷한 값에 사는 날.",
@@ -3879,8 +4414,12 @@ def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, di
         (sect("eres", "실적 반응", "고래 종목 중 어제·그제 실적 발표 — 발표 전 종가 대비 등락.",
               card_rows(eres[:6], lambda r: [("발표", r["earn"][5:], ""), ("반응", _pc(r["react"]), _cls(r["react"])), ("보유", f'{r["n_hold"]}곳', ""), ("순증감", f'{r["score"]:+d}', "")])) if eres else ""),
         sect("hh", "히어로 성적표", "매일 고른 '오늘 이것 하나'의 그 뒤 성과. 이 리포트가 뭘 맞췄나.", hero_hist or '<p class="empty">내일부터 쌓입니다.</p>'),
+        sect("follow", "따라 샀다면", "매일 '오늘의 10'을 동일비중으로 들고 다음 날 갈아탄 가상 포트.", fl_html or '<p class="empty">내일부터 쌓입니다.</p>'),
         sect("bt", "이 방법이 먹혔나", "과거 분기에 각 구역이던 종목들이 그 뒤 실제로 어떻게 됐는지. 분기마다 표본이 쌓입니다.",
-             bt_html or '<p class="empty">분기 이력이 4개 이상 쌓이면 계산됩니다.</p>'),
+             (bt_html or '<p class="empty">분기 이력이 4개 이상 쌓이면 계산됩니다.</p>') + w_note),
+        (sect("rel", "믿을 만한 고래", "2분기 전까지의 큰 신규 포지션이 그 뒤 지수를 이긴 비율. 이긴 고래의 표를 더 무겁게 셉니다.",
+              "".join(f'<div class="row"><div class="rh"><b>{_h(short_fund(r["name"]))}</b> <span class="nm">{_h(FUND_STYLE.get(r["name"], ""))}</span><em class="scr" style="font-size:15px">×{r["mult"]:.2f}</em></div>'
+                      f'<div class="kvs"><span class="kv"><i>신호</i><em>{r["n"]}</em></span><span class="kv"><i>승률</i><em>{r["winp"]:.0f}%</em></span><span class="kv"><i>지수 대비</i><em class="{_cls(r["avg"])}">{r["avg"]:+.0f}%p</em></span></div></div>' for r in rel_rows[:8])) if rel_rows else ""),
         sect("conv", "컨빅션", "보유 펀드들의 포트 내 비중 합. 20곳이 0.5%씩 든 것과 6곳이 12%씩 든 것을 구분합니다.",
              card_rows([{**a, **pc.get(a["sym"], {})} for a in conv[:8]],
                        lambda r: [("점수", f'{r["conviction"]:.0f}', ""), ("보유", f'{r["n_hold"]}곳', ""),
@@ -3893,12 +4432,13 @@ def make_mobile_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, di
                  f'style="width:{min(100, abs(s["score"]) / max(1, max(abs(x["score"]) for x in secs)) * 100):.0f}%"></span></div>'
                  f'<em class="{_cls(s["score"])}">{s["score"]:+d}</em></div>' for s in secs[:8]) + "</div>"
              if secs else '<p class="empty">자료 없음</p>'),
-        sect("rank", "성적 상위", "13F 보유를 복제한 1년 수익률 추정치입니다. 실제 펀드 수익률이 아닙니다.",
+        sect("rank", "성적 상위", "13F 보유를 복제한 1년 수익률 추정치입니다. 실제 펀드 수익률이 아닙니다. 태그는 스타일(회전율·집중도).",
              '<div class="two">' + "".join(
                  f'<div><h3>{_h(t)}</h3><ol class="rk">' + "".join(
-                     f'<li><span>{_h(r["name"][:18])}</span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>'
+                     f'<li><span>{_h(r["name"][:18])}' + (f'<small>{_h(FUND_STYLE[r["name"]])}</small>' if FUND_STYLE.get(r["name"]) else "") + f'</span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>'
                      for r in rows[:8]) + "</ol></div>"
                  for t, rows in (("기관", inst), ("유명인", ppl))) + "</div>"),
+        (sect("bound", "40곳 경계선", "감시 20곳은 1년 성적으로 매일 다시 뽑힙니다. 가장자리에 누가 있나.", bd_html) if bd_html else ""),
         '<footer>고래 평단·수익률·비중은 13F 공시에서 추정한 값이며 실제 체결가가 아닙니다. '
         '13F는 분기말 후 45일에 공개됩니다. 고래 인덱스는 컨빅션 상위 10종목 동일비중 가상 포트로 거래비용을 반영하지 않습니다.<br>'
         '출처 13f.info · Yahoo Finance · Nasdaq · 투자 자문이 아닙니다.</footer>',
@@ -4000,6 +4540,10 @@ border:1px solid var(--line);border-radius:11px;padding:8px 10px}
 .hero .tag .pick{margin-left:6px;padding:1px 6px;border:1px solid currentColor;border-radius:6px;font-size:11px}
 .hero .hnote{font-size:13px;color:var(--mut);margin:-4px 0 8px;padding-left:8px;border-left:2px solid var(--line)}
 .mv{display:inline-block;font-size:11px;font-weight:800;margin-right:5px;padding:0 4px;border-radius:5px;background:var(--bg);color:var(--mut)}
+.acts{background:#fff6f5;border:1.5px solid var(--hot);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:14px}
+.acts>i{display:block;font-style:normal;font-weight:800;color:var(--hot);margin-bottom:4px}.acts.none{background:var(--card);border-color:var(--line);color:var(--mut)}.acts.none>i{display:inline;color:var(--mut);margin-right:6px}
+.act{padding:5px 0;border-top:1px solid var(--line)}.act:first-of-type{border-top:0}.act em{font-style:normal;color:var(--hot);font-weight:700;font-size:12.5px;margin-left:4px}.act .sub{font-size:12.5px;color:var(--mut)}
+.d5{letter-spacing:1px;font-weight:800}.trt{font-size:11px;font-weight:800;margin-left:4px}.note{font-size:12.5px;color:var(--mut)}
 .mv.up{color:var(--up)}.mv.down{color:var(--down)}.mv.new{color:#7b3fa0}
 .scr small{font-size:11px;margin-left:3px;font-weight:700}.scr small.up{color:var(--up)}.scr small.down{color:var(--down)}
 footer{color:var(--mut);font-size:11.5px;line-height:1.6;border-top:1px solid var(--line);padding-top:14px;margin-top:26px}
@@ -4019,23 +4563,43 @@ footer{color:var(--mut);font-size:11.5px;line-height:1.6;border-top:1px solid va
 
 
 # ═══════════════════════════════ 종목 사전 (docs/s/SYM.html) — 모바일 리포트에서 티커를 누르면 열린다
-def stock_page_html(a, c, hist, big_row, ins_row, score, why):
+def stock_page_html(a, c, hist, big_row, ins_row, score, why, earn_syms=()):
     sym = a["sym"]; name = label_only(sym, a.get("name", ""))
     px = yahoo_prices(sym)
-    spark = svg_spark(px, w=340, h=90) if px else ""
+    try:
+        spark = svg_stock_story(sym, a, hist, px, w=340, h=130) if px else ""      # 4.3 ⑮ 고래 이야기 차트
+    except Exception:
+        spark = ""
+    if not spark:
+        spark = svg_spark(px, w=340, h=90) if px else ""
+    try:
+        cl = checklist({**a, **c}, earn_syms); dots, k = check_dots(cl)
+        chk_html = (f'<div class="card"><h2>살 만한가 <b style="color:{"#1f7a4d" if k >= 4 else "#c2740a" if k == 3 else "#8a8580"}">{dots}</b> {k}/5</h2><ul>'
+                    + "".join(f'<li>{"✅" if ok else "⬜"} <b>{_h(lab)}</b> <span style="color:var(--mut)">{_h(note)}</span></li>' for lab, ok, note in cl) + '</ul></div>')
+    except Exception:
+        chk_html = ""
+    tr = ""
+    try:
+        if c.get("ret_1y") is not None and c["ret_1y"] < 0 and a.get("score", 0) > 0:
+            tr = trend_tag(sym)
+    except Exception:
+        tr = ""
     ser = [(q, v) for q, v in series_of(hist, sym, "h")]
     mx = max([v for _, v in ser] or [1])
     bars = "".join(f'<div class="hb"><span style="height:{v / mx * 100:.0f}%"></span><i>{_h(q.replace(" 20", " ‘"))}</i><b>{v}</b></div>' for q, v in ser[-6:])
     ranks = a.get("holder_ranks") or {}
     holders = sorted([h for h in (a.get("holders") or []) if isinstance(h, str)], key=lambda x: ranks.get(x, 99))
     new_set = set(a.get("new") or []); exit_set = set(a.get("exit") or [])
-    hl = "".join(f'<li>{_h(short_fund(h))}{" <em class=n>신규</em>" if h in new_set else ""}</li>' for h in holders[:20])
+    hl = "".join(f'<li>{_h(short_fund(h))}{" <em class=n>신규</em>" if h in new_set else ""}'
+                 + (f' <small class="sty">{_h(FUND_STYLE[h])}</small>' if FUND_STYLE.get(h) else "") + '</li>' for h in holders[:20])
     ex = "".join(f'<li class="x">{_h(short_fund(h))} <em>편출</em></li>' for h in list(exit_set)[:6])
     facts = [("1년 주가", _pc(c.get("ret_1y"), 0), _cls(c.get("ret_1y"))), ("현재가", f'${c["last"]:,.2f}' if c.get("last") else "—", ""),
              ("보유 고래", f'{a["n_hold"]}곳', ""), ("편입 순증감", f'{a.get("score", 0):+d}', ""),
              ("가중 순증감", f'{a.get("wscore", 0):+.1f}', "")]
     if a.get("cost_basis"): facts.append(("고래 평단", f'${a["cost_basis"]:,.0f}', ""))
     if a.get("own_pct"): facts.append(("고래 지분", f'{a["own_pct"]:.1f}%', ""))
+    if tr: facts.append(("추세", tr, "up" if tr == "반등 시작" else ("down" if tr == "하락 중" else "")))
+    if c.get("vs_qe") is not None: facts.append(("분기말 대비", _pc(c["vs_qe"], 0), _cls(c["vs_qe"])))
     if big_row: facts.append(("큰 신규", f'{big_row["big_n"]}곳', ""))
     if ins_row: facts.append(("임원 매수", f'${ins_row["ins_value"]:,.0f}', "up"))
     why_html = "".join(f'<li><b>{_h(k)}</b> {_h(v)}</li>' for k, v in why) or "<li>점수 근거 없음</li>"
@@ -4054,21 +4618,22 @@ h1{font-size:28px;margin:6px 0 0;letter-spacing:-.5px}h1 span{font-weight:400;co
 .hb span{display:block;width:100%;background:var(--go);border-radius:4px 4px 0 0;min-height:2px}.hb i{font-style:normal;font-size:10px;color:var(--mut);margin-top:4px}.hb b{position:absolute;top:0;font-size:11px}
 ul{margin:0;padding-left:18px}li{margin:3px 0;font-size:14px}li.x{color:var(--mut)}li em{font-style:normal;font-size:11px;color:var(--go);font-weight:700}li em.n{color:var(--up)}
 .spark svg{width:100%;height:auto}footer{color:var(--mut);font-size:11px;margin-top:20px}
+li small.sty{font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:4px}
 @media(prefers-color-scheme:dark){:root{--bg:#141412;--card:#1e1d1a;--ink:#eceae5;--mut:#9a958c;--line:#33312c;--go:#4aa97a;--up:#e06a5e;--down:#5fa3e0}}
 """
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{_h(sym)} · 고래 40</title><style>{css}</style></head><body><div class="wrap">'
             f'<a class="back" href="../index.html">← 오늘 리포트</a>'
             f'<h1>{_h(sym)}<span>{_h(name)}</span></h1><div class="score">고래 점수 {score}</div>'
-            f'<div class="card spark">{spark}<div style="font-size:11px;color:var(--mut)">1년 주가</div></div>'
+            f'<div class="card spark">{spark}</div>'
             f'<div class="card"><div class="facts">' + "".join(f'<span><i>{_h(k)}</i><em class="{cl}">{_h(v)}</em></span>' for k, v, cl in facts) + '</div></div>'
-            f'<div class="card"><h2>점수 근거</h2><ul>{why_html}</ul></div>'
+            f'<div class="card"><h2>점수 근거</h2><ul>{why_html}</ul></div>' + chk_html +
             f'<div class="card"><h2>분기별 보유 고래 수</h2><div class="hist">{bars or "<i>이력 없음</i>"}</div></div>'
             f'<div class="card"><h2>누가 들고 있나 (성적 좋은 순)</h2><ul>{hl or "<li>—</li>"}{ex}</ul></div>'
             f'<footer>13F 기준 추정치 · 투자 자문이 아닙니다 · {date.today().isoformat()}</footer></div></body></html>')
 
 
-def build_stock_pages(agg, pc, hist, big, ins, top, limit=200):
+def build_stock_pages(agg, pc, hist, big, ins, top, limit=200, earn_syms=()):
     out = Path("docs") / "s"
     out.mkdir(parents=True, exist_ok=True)
     bmap = {r["sym"]: r for r in big}; imap = {r["sym"]: r for r in ins}
@@ -4078,7 +4643,7 @@ def build_stock_pages(agg, pc, hist, big, ins, top, limit=200):
         c = pc.get(a["sym"], {})
         try:
             sc, why = whale_score(a, c, bmap.get(a["sym"]), imap.get(a["sym"]))
-            (out / f'{a["sym"]}.html').write_text(stock_page_html(a, c, hist, bmap.get(a["sym"]), imap.get(a["sym"]), sc, why), encoding="utf-8")
+            (out / f'{a["sym"]}.html').write_text(stock_page_html(a, c, hist, bmap.get(a["sym"]), imap.get(a["sym"]), sc, why, earn_syms), encoding="utf-8")
             n += 1
         except Exception:
             continue
@@ -4177,7 +4742,8 @@ def svg_quadrant(Q, pc, w=640, h=420):
     return "".join(o)
 
 
-def svg_index_line(idx, w=560, h=190):
+def svg_index_line(idx, w=560, h=190, trio=None):
+    """고래 인덱스 선. trio가 있으면 4.3 ⑭ 세 바구니(컨빅션·큰 신규·역행)를 함께 그린다."""
     if not idx:
         return ""
     spy = yahoo_prices("SPY")
@@ -4185,31 +4751,47 @@ def svg_index_line(idx, w=560, h=190):
     days = [k for k in sorted(spy) if k >= start]
     if len(days) < 20:
         return ""
-    series = {}
-    for s in idx["picks"]:
-        px = yahoo_prices(s); p0 = px_at(px, days[0])
-        if p0:
-            series[s] = [((px_at(px, k) or p0) / p0) for k in days]
-    if not series:
+
+    def basket_line(picks):
+        series = {}
+        for s in picks:
+            px = yahoo_prices(s); p0 = px_at(px, days[0])
+            if p0:
+                series[s] = [((px_at(px, k) or p0) / p0) for k in days]
+        if len(series) < max(2, len(picks) // 2):
+            return None
+        return [sum(v[i] for v in series.values()) / len(series) for i in range(len(days))]
+
+    lines = []
+    for name, col, picks, _ in (trio or [("고래 인덱스", "#1f7a4d", idx["picks"], idx.get("r1y"))]):
+        b = basket_line(picks)
+        if b:
+            lines.append((name, col, b))
+    if not lines:
         return ""
-    basket = [sum(v[i] for v in series.values()) / len(series) for i in range(len(days))]
     spyn = [spy[k] / spy[days[0]] for k in days]
     L, R, T, B = 44, 12, 22, 22
     x0, y0, ww, hh = L, T, w - L - R, h - T - B
-    lo, hi = min(min(basket), min(spyn)) * .98, max(max(basket), max(spyn)) * 1.02
+    allv = [v for _, _, b in lines for v in b] + spyn
+    lo, hi = min(allv) * .98, max(allv) * 1.02
     Y = lambda v: y0 + (hi - v) / (hi - lo) * hh
     o = [f'<svg viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">']
     for g in range(4):
         gv = lo + (hi - lo) * g / 3; gy = Y(gv)
         o.append(f'<line x1="{x0}" x2="{x0 + ww}" y1="{gy:.1f}" y2="{gy:.1f}" stroke="#e3dfd6"/>')
         o.append(f'<text x="{x0 - 6}" y="{gy + 3.5:.1f}" text-anchor="end" font-size="9.5" fill="#6c6862">{(gv - 1) * 100:+.0f}%</text>')
-    for ser, c, wdt in ((spyn, "#8a8580", 1.6), (basket, "#1f7a4d", 2.4)):
-        pts = " ".join(f'{x0 + i / (len(days) - 1) * ww:.1f},{Y(v):.1f}' for i, v in enumerate(ser))
-        o.append(f'<polyline points="{pts}" fill="none" stroke="{c}" stroke-width="{wdt}"/>')
+    pts = " ".join(f'{x0 + i / (len(days) - 1) * ww:.1f},{Y(v):.1f}' for i, v in enumerate(spyn))
+    o.append(f'<polyline points="{pts}" fill="none" stroke="#8a8580" stroke-width="1.6"/>')
+    for name, col, b in lines:
+        pts = " ".join(f'{x0 + i / (len(days) - 1) * ww:.1f},{Y(v):.1f}' for i, v in enumerate(b))
+        o.append(f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="2.2"/>')
     o.append(f'<text x="{x0}" y="{h - 6}" font-size="9.5" fill="#6c6862">{days[0][:7]}</text>')
     o.append(f'<text x="{x0 + ww}" y="{h - 6}" text-anchor="end" font-size="9.5" fill="#6c6862">{days[-1][:7]}</text>')
-    o.append(f'<rect x="{x0}" y="6" width="12" height="4" fill="#1f7a4d"/><text x="{x0 + 16}" y="11" font-size="10" fill="#171614">고래 인덱스 {idx["r1y"]:+.0f}%</text>')
-    o.append(f'<rect x="{x0 + 150}" y="6" width="12" height="4" fill="#8a8580"/><text x="{x0 + 166}" y="11" font-size="10" fill="#171614">S&amp;P500 {idx["s1y"]:+.0f}%</text>')
+    lx = x0
+    for name, col, b in lines:
+        o.append(f'<rect x="{lx}" y="6" width="12" height="4" fill="{col}"/><text x="{lx + 16}" y="11" font-size="10" fill="#171614">{_h(name)} {(b[-1] - 1) * 100:+.0f}%</text>')
+        lx += 118
+    o.append(f'<rect x="{lx}" y="6" width="12" height="4" fill="#8a8580"/><text x="{lx + 16}" y="11" font-size="10" fill="#171614">S&amp;P500 {(spyn[-1] - 1) * 100:+.0f}%</text>')
     o.append("</svg>")
     return "".join(o)
 
@@ -4217,6 +4799,8 @@ def svg_index_line(idx, w=560, h=190):
 def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, disc, conv,
                     mov, secs, idx, live, clus, cost, warn, earn, bt, big=(), ins=(), X=None):
     X = X or {}
+    trend = X.get("trend") or {}
+    TRC = {"하락 중": "#b3312a", "바닥 다짐": "#c2740a", "반등 시작": "#1f7a4d"}
     today = date.today(); wd = "월화수목금토일"[today.weekday()]
     nxt, dday = next_13f_deadline()
     hero = X.get("hero")
@@ -4279,7 +4863,7 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
         gap = idx["r1y"] - (idx["s1y"] or 0)
         ex = f' · {idx["top_sym"]} 제외 {idx["r1y_ex"]:+.0f}%' if idx.get("r1y_ex") is not None else ""
         kp.append(("고래 인덱스 · 1년", f'{idx["r1y"]:+.1f}%', f'S&P500 {idx["s1y"]:+.1f}%{ex}', _cls(idx["r1y"])))
-        kp.append(("고래 인덱스 · 어제", f'{idx["r1d"]:+.2f}%', f'S&P500 {idx["s1d"]:+.2f}%', _cls(idx["r1d"])))
+        kp.append((f'고래 인덱스 · {"어제" if not X.get("px_lag") else X.get("px_last", "")[5:].replace("-", "/") + " (지연)"}', f'{idx["r1d"]:+.2f}%', f'S&P500 {idx["s1d"]:+.2f}%', _cls(idx["r1d"])))
     if live:
         kp.append(("실시간 신호", f'{len(live)}건', "Form 4 매수 · 13D/G · 최근 5영업일", "hot"))
     else:
@@ -4350,19 +4934,20 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
                                   ("profit", "오른 뒤 고래가 나갔다"),
                                   ("flee", "내리는데 고래도 팔았다")))
     ev = [(nxt, f"13F 마감 · 40곳 보유 대량 갱신", "warn")]
-    for r in list(earn)[:6]:
+    for r in list(earn)[:3]:
         ev.append((date.fromisoformat(r["earn"]), f"{stock_label(r['sym'], r['name'])} 실적 · 고래 {r['n_hold']}곳", "hot" if r["dday"] <= 2 else ""))
     q_end = date(today.year + (today.month > 9), {1: 3, 2: 6, 3: 9, 4: 12}[(today.month - 1) // 3 + 1] % 12 or 12, 1)
     ev.sort(key=lambda x: x[0])
     sched_html = safe("열흘 일정", lambda: '<div class="sched">' + "".join(
         f'<div class="ev {cl}"><div class="evd">{d.month}/{d.day}<small>{"월화수목금토일"[d.weekday()]}</small></div>'
-        f'<div class="evt">{_h(t)}</div><div class="evdd">D-{(d - today).days}</div></div>' for d, t, cl in ev[:6]) + "</div>")
+        f'<div class="evt">{_h(t)}</div><div class="evdd">D-{(d - today).days}</div></div>' for d, t, cl in ev[:4]) + "</div>")
     # ── 2쪽 사분면 ──
     zc = []
     for k in ("contra", "chase", "profit", "flee"):
         zt, zd, act, _ = ZONE[k]; rows = Q.get(k, [])[:4]
         lis = "".join(f'<li><div><b>{_h(r["sym"])}</b> <span>{_h(label_only(r["sym"], r["name"])[:12])}</span>'
-                      f'<div class="who">{_h(_names(r, 2))}</div></div>'
+                      + (f'<span class="trt" style="color:{TRC.get(trend[r["sym"]], "#171614")}">{_h(trend[r["sym"]])}</span>' if k == "contra" and trend.get(r["sym"]) else "")
+                      + f'<div class="who">{_h(_names(r, 2))}</div></div>'
                       f'<em class="{_cls(r["ret_1y"])}">{_pc(r["ret_1y"], 0)}</em><span class="sc">{r["score"]:+d}</span></li>' for r in rows)
         zc.append(f'<div class="zone" style="border-top-color:{ZC[k]}"><div class="zt">{_h(zt)}<span style="color:{ZC[k]}">{_h(act)}</span></div>'
                   f'<p>{_h(zd)}</p><ul>{lis or "<li class=e>해당 없음</li>"}</ul></div>')
@@ -4409,8 +4994,9 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
         for r in rows[:6]:
             rm, k = rank_mark(prev, gkey, r["name"], r["rank"])
             d1 = r.get("ret_1d")
-            lis.append(f'<li class="{k}"><span>{_h(short_fund(r["name"])[:20])}'
+            lis.append(f'<li class="{k}"><span>{_h(short_fund(r["name"])[:18])}'
                        + (f'<small class="{k}">{_h(rm)}</small>' if rm and rm != "–" else "")
+                       + (f'<small class="sty">{_h(FUND_STYLE[r["name"]])}</small>' if FUND_STYLE.get(r["name"]) else "")
                        + f'</span><u class="{_cls(d1)}">{f"{d1:+.1f}%" if isinstance(d1, (int, float)) else ""}</u>'
                        f'<em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>')
         return f'<ol class="rk rk2"><li class="rkh"><span></span><u>어제</u><em>1년</em></li>{"".join(lis)}</ol>'
@@ -4430,7 +5016,95 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
     hero_summ = X.get("hero_summ")
     near = X.get("near") or []; rebound = X.get("rebound") or []
     fday = X.get("fday") or []; sday = X.get("sday") or []; moves = X.get("moves") or {}
+    trend = X.get("trend") or {}; split = X.get("split") or []; switch = X.get("switch") or []
+    debut = X.get("debut") or []; checks = X.get("checks") or {}; st_chg = X.get("state_changes") or []
+    follow = X.get("follow"); trio = X.get("trio") or []; bound = X.get("bound") or {}
+    rel_rows = X.get("rel") or []; wts = X.get("wts"); actions = X.get("actions") or []
     zone_of = {r["sym"]: k for k in Q for r in Q[k]}
+    TRC = {"하락 중": "#b3312a", "바닥 다짐": "#c2740a", "반등 시작": "#1f7a4d"}
+
+    # ── 4.3 블록 ──
+    def actions_html():
+        if not actions:
+            return '<div class="acts none"><i>오늘 행동 필요</i><span>없음 — 오늘은 지켜보는 날입니다</span></div>'
+        return ('<div class="acts"><i>오늘 행동 필요</i>' + "".join(
+            f'<div class="act"><span class="ai">{icon}</span><b>{_h(sym)}</b><em>{_h(kind)}</em><span class="al">{_h(line)}</span></div>'
+            for icon, kind, sym, line in actions[:5]) + '</div>')
+
+    def dots_html(sym):
+        d = checks.get(sym)
+        if not d:
+            return ""
+        dots, k = d
+        col = "#1f7a4d" if k >= 4 else ("#c2740a" if k == 3 else "#8a8580")
+        return f'<span class="dots5" style="color:{col}" title="{k}/5">{dots}</span>'
+
+    def debut_html():
+        if not debut:
+            return h2("첫 등장 종목", "40곳 어디에도 없다가 이번 분기 처음 나타난 것") + '<p class="empty">이번 분기 첫 등장 종목이 없습니다.</p>'
+        return h2("첫 등장 종목", f"40곳 어디에도 없다가 {debut[0]['quarter']}에 처음 나타난 것 — 가장 이른 신호") + table(
+            [("종목 · 누가", ""), ("곳", "r"), ("1년", "r")],
+            [[(sym_cell({**r, "holders": r.get("debut_by", [])}, n=2), ""), (f'{r["debut_h"]}', ""), (_pc(r.get("ret_1y"), 0), _cls(r.get("ret_1y")))] for r in debut[:5]], "tight")
+
+    def split_html():
+        if not split:
+            return h2("의견 갈림", "편입도 편출도 많은 종목 — 고래들이 다투는 자리") + '<p class="empty">편입·편출이 3곳 이상씩 맞선 종목이 없습니다.</p>'
+        return h2("의견 갈림", "편입도 편출도 3곳 이상 — 순증감에 묻히는 고래들의 싸움") + table(
+            [("종목 · 산 곳 / 판 곳", ""), ("산 : 판", "r"), ("1년", "r")],
+            [[(sym_cell(r, names=False, spark=False) + f'<div class="who"><b class="up">산</b> {_h(" · ".join(short_fund(x) for x in r["buyers"][:2]))} &nbsp;<b class="down">판</b> {_h(" · ".join(short_fund(x) for x in r["sellers"][:2]))}</div>', ""),
+              (f'<b class="up">{r["n_in"]}</b> : <b class="down">{r["n_out"]}</b>', ""),
+              (_pc(r.get("ret_1y"), 0), _cls(r.get("ret_1y")))] for r in split[:3]], "tight split")
+
+    def switch_html():
+        if not switch:
+            return '<p class="empty">이번 분기 같은 섹터 안에서 갈아탄 고래가 없습니다.</p>'
+        return table([("판 것 → 산 것", ""), ("섹터", ""), ("누가", ""), ("비중", "r")],
+                     [[(f'<b class="down">{_h(r["sold"])}</b> → <b class="up">{_h(r["bought"])}</b>', ""), (_h(r["sector"]), ""),
+                       ('<span class="nw">' + _h(" · ".join(short_fund(x)[:10] for x in r["funds"][:2])) + (f' 등 {r["n"]}곳' if r["n"] > 2 else "") + '</span>', ""),
+                       (f'{r["w_bought"]:.1f}%', "")] for r in switch[:5]], "tight sw")
+
+    def states_html():
+        if not st_chg:
+            return '<p class="empty">어제와 상태가 달라진 종목이 없습니다. (관찰 → 접근 → 매수 검토 / 보유 점검)</p>'
+        SC = {"관찰": "#8a8580", "접근": "#c2740a", "매수 검토": "#1f7a4d", "보유 점검": "#b3312a", "해제": "#8a8580", "—": "#8a8580"}
+        return '<div class="stl">' + "".join(
+            f'<div class="st"><b>{_h(sym)}</b><span style="color:{SC.get(p, "#8a8580")}">{_h(p)}</span><i>→</i><span style="color:{SC.get(s, "#8a8580")};font-weight:900">{_h(s)}</span>{dots_html(sym)}</div>'
+            for sym, p, s in st_chg[:8]) + '</div>'
+
+    def follow_html():
+        if not follow:
+            return h2("따라 샀다면", "매일 '오늘의 10'을 동일비중으로 사고 다음 날 갈아탔다면") + '<p class="empty">내일부터 쌓입니다. 어제 명단의 어제→오늘 등락 평균을 매일 더합니다.</p>'
+        f = follow
+        return (h2("따라 샀다면", f"매일 '오늘의 10'을 동일비중으로 들고 다음 날 갈아탄 가상 포트 · {f['since']}부터 {f['days']}거래일")
+                + f'<div class="bts"><div class="bt bt-main"><i>누적</i><b class="{_cls(f["cum"])}">{f["cum"]:+.1f}%</b><u>{f["days"]}거래일</u></div>'
+                  f'<div class="bt"><i>S&amp;P500</i><b class="{_cls(f["spy"])}">{f["spy"]:+.1f}%</b><u>같은 기간</u></div>'
+                  f'<div class="bt"><i>지수 대비</i><b class="{_cls(f["alpha"])}">{f["alpha"]:+.1f}%p</b><u>초과 수익</u></div>'
+                  f'<div class="bt"><i>어제</i><b class="{_cls(f["last"])}">{f["last"]:+.2f}%</b><u>S&amp;P {f["last_spy"]:+.2f}%</u></div></div>')
+
+    def weights_html():
+        if not wts or not wts.get("weights"):
+            return ""
+        w = wts["weights"]; same = w == SCORE_BASE
+        return (f'<p class="note"><b>점수 가중치</b> — 큰 신규 {w["big"]} · 가중 순증감 {w["wscore"]} · 역행 {w["contra"]} · 평단 아래 {w["cost"]} · 임원 매수 {w["ins"]} · 동시 편입 {w["cluster"]}'
+                + (" (기본값)" if same else f' · {_h(" / ".join(wts.get("notes") or []))}') + '</p>')
+
+    def rel_html():
+        if not rel_rows:
+            return h2("믿을 만한 고래", "과거 큰 신규 포지션이 지수를 이겼나 — 이긴 고래의 표를 더 무겁게") + f'<p class="empty">큰 신규 신호가 {REL_MIN_N}개 이상 쌓인 고래가 아직 없습니다. 분기가 지나면 채워집니다.</p>'
+        return h2("믿을 만한 고래", "2분기 전까지의 큰 신규 포지션이 그 뒤 지수를 이긴 비율 · 배수는 이 고래의 표 무게") + table(
+            [("고래", ""), ("신호", "r"), ("승률", "r"), ("지수 대비", "r"), ("배수", "r")],
+            [[(f'<b>{_h(short_fund(r["name"])[:16])}</b><div class="who">{_h(FUND_STYLE.get(r["name"], ""))}</div>', ""), (f'{r["n"]}', ""), (f'{r["winp"]:.0f}%', ""),
+              (f'{r["avg"]:+.0f}%p', _cls(r["avg"])), (f'×{r["mult"]:.2f}', "up" if r["mult"] > 1 else ("down" if r["mult"] < 1 else ""))] for r in rel_rows[:6]], "tight rel")
+
+    def bound_html():
+        if not bound:
+            return h2("40곳 경계선", "감시 TOP 20 가장자리") + '<p class="empty">후보가 더 없습니다.</p>'
+        blocks = []
+        for g, d in bound.items():
+            o = "".join(f'<li><span>{_h(short_fund(r["name"])[:16])}<small>{r["rank"]}위 · 여유 {r["gap"]:+.1f}p</small></span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>' for r in d["out"])
+            i = "".join(f'<li><span>{_h(short_fund(r["name"])[:16])}<small>{r["rank"]}위 · 부족 {r["gap"]:+.1f}p</small></span><em class="{_cls(r["ret_1y"])}">{r["ret_1y"]:+.0f}%</em></li>' for r in d["in"])
+            blocks.append(f'<div><i>{_h(g)} · 곧 빠질 곳</i><ol class="rk fdl">{o}</ol></div><div><i>{_h(g)} · 곧 들어올 곳</i><ol class="rk fdl">{i}</ol></div>')
+        return h2("40곳 경계선", "감시 20곳은 1년 성적으로 매일 다시 뽑힙니다 — 가장자리에 누가 있나") + f'<div class="fd">{"".join(blocks[:4])}</div>'
 
     # ── 4.2 일간 블록 ──
     def fday_html():
@@ -4497,7 +5171,7 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
         for i, r in enumerate(top[:10], 1):
             z = zone_of.get(r["sym"], "contra"); zc = ZC[z]
             who = " · ".join(r.get("holders_top") or [])
-            chips = "".join(f'<span class="wc"><b>{_h(k)}</b> {_h(v)}</span>' for k, v in r["why"][:4])
+            chips = "".join(f'<span class="wc"><b>{_h(k)}</b> {_h(v)}</span>' for k, v in r["why"][:3])
             zt, _, act, _ = ZONE.get(z, ZONE["contra"])
             m = moves.get(r["sym"]) or {}
             arrow, acl = "", ""
@@ -4509,13 +5183,17 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
                 arrow, acl = "–", "same"
             sd = m.get("score_delta")
             sdh = f'<small class="{"up" if sd > 0 else "down"}">{sd:+d}</small>' if sd else ""
+            tr = trend.get(r["sym"])
+            if tr and z == "contra":
+                chips += f'<span class="wc" style="color:{TRC.get(tr, "#171614")}"><b>{_h(tr)}</b></span>'
             rows.append(f'<div class="trow"><div class="tn">{i}' + (f'<small class="{acl}">{arrow}</small>' if arrow else "") + '</div>'
                         f'<div class="tsym"><b>{_h(r["sym"])}</b> <span>{_h(label_only(r["sym"], r.get("name", ""))[:14])}</span><div class="who">{_h(who)}</div></div>'
                         f'<div class="tbar"><div class="bar2"><span style="width:{r["wscore_total"]}%;background:{zc}"></span></div><b style="color:{zc}">{r["wscore_total"]}{sdh}</b><i style="color:{zc}">{_h(zt)}</i></div>'
                         f'<div class="tchips">{chips}</div>'
+                        f'<div class="tchk">{dots_html(r["sym"])}</div>'
                         f'<div class="tspark">{svg_spark(yahoo_prices(r["sym"]), w=56, h=18)}</div>'
                         f'<div class="tret {_cls(r.get("ret_1y"))}">{_pc(r.get("ret_1y"), 0)}<small>{r["n_hold"]}곳</small></div></div>')
-        return ('<div class="top10"><div class="trow th"><div class="tn">#</div><div class="tsym">종목 · 누가</div><div class="tbar">점수</div><div class="tchips">근거</div><div class="tspark">1년</div><div class="tret">등락</div></div>'
+        return ('<div class="top10"><div class="trow th"><div class="tn">#</div><div class="tsym">종목 · 누가</div><div class="tbar">점수</div><div class="tchips">근거</div><div class="tchk">살 만한가</div><div class="tspark">1년</div><div class="tret">등락</div></div>'
                 + "".join(rows) + "</div>")
 
     def eres_html():
@@ -4535,15 +5213,15 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
                 f'<div class="bt"><i>승률</i><b>{s.get("win", 0):.0f}%</b><u>지수를 이긴 비율</u></div></div>')
         rows = [[(f'{r["date"][5:]}', ""), (f'<b>{_h(r["sym"])}</b> <span class="mut">{_h(label_only(r["sym"], r["name"])[:12])}</span>', ""),
                  (_h(ZONE.get(r["zone"], ("—",))[0]), ""), (f'{r["days"]}일', ""), (f'${r["px"]:,.0f}→${r["now"]:,.0f}', ""),
-                 (_pc(r["ret"]), _cls(r["ret"])), (_pc(r["alpha"]), _cls(r["alpha"]))] for r in hero_rows[:10]]
+                 (_pc(r["ret"]), _cls(r["ret"])), (_pc(r["alpha"]), _cls(r["alpha"]))] for r in hero_rows[:6]]
         t = table([("고른 날", ""), ("종목", ""), ("구역", ""), ("경과", "r"), ("가격", "r"), ("수익률", "r"), ("지수 대비", "r")], rows, "tight hist")
         return h2("히어로 성적표", "매일 고른 '오늘 이것 하나'의 그 뒤 성과 — 이 리포트가 뭘 맞췄나") + head + t
 
     # ── 페이지 조립 ──
     p1 = (masthead(1, "오늘 무엇을 볼까", "고래 40곳의 매집·이탈을 하나의 점수로 — 위에서 아래로 읽으면 됩니다")
           + (safe("시즌", season_html, "") if season else "")
-          + kpi + safe("새 신호", new_html, "") + hero_html
-          + ((h2("오늘의 한 줄", "히어로 카드 외에 눈여겨볼 것") + f'<ul class="heads">{"".join(hl[:5])}</ul>') if not season else "")
+          + kpi + safe("행동 필요", actions_html, "") + safe("새 신호", new_html, "") + hero_html
+          + ((h2("오늘의 한 줄", "히어로 카드 외에 눈여겨볼 것") + f'<ul class="heads">{"".join(hl[:4])}</ul>') if not season else "")
           + '<div class="two">'
           + '<div>' + h2("어제의 고래", "최신 13F 보유를 복제한 하루 성적 — 매일 바뀝니다") + safe("어제의 고래", fday_html) + '</div>'
           + '<div>' + h2("어제 섹터 흐름", "고래 3곳 이상 보유 종목을 섹터로 묶은 동일비중 등락 · 작은 글씨는 그 섹터에서 가장 오른 종목") + safe("어제 섹터", sday_html) + '</div>'
@@ -4574,11 +5252,17 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
           + '</div><div class="two">'
           + '<div>' + safe("실적 반응", eres_html) + '</div>'
           + '<div>' + h2("곧 실적 발표", "열흘 안에 실적이 잡힌 고래 종목 — 행동 시점이 여기 걸립니다") + er_t + '</div>'
+          + '</div><div class="two">'
+          + '<div>' + h2("갈아타기", "같은 고래가 같은 분기에 같은 섹터 안에서 A를 팔고 B를 샀다 — 돈이 옮겨간 방향") + safe("갈아타기", switch_html) + '</div>'
+          + '<div>' + h2("종목 상태 전이", "관찰 → 접근(평단 ±5%) → 매수 검토(체크 4/5+) / 보유 점검 — 어제와 달라진 것만") + safe("상태 전이", states_html) + '</div>'
+          + '</div><div class="two">'
+          + '<div>' + safe("첫 등장", debut_html) + '</div>'
+          + '<div>' + safe("의견 갈림", split_html) + '</div>'
           + '</div>')
     p5 = (masthead(6, "이 방법이 먹혔나", "정직하게 둡니다. 지수를 못 이기면 그대로 보입니다")
-          + h2("구역별 자체 검증", "2분기 전 각 구역이던 종목들의 그 뒤 수익률") + bt_html
-          + safe("히어로 성적표", hero_hist_html)
-          + h2("고래 인덱스 vs S&P500 · 1년", "컨빅션 상위 10종목 동일비중 가상 포트") + f'<div class="line wide">{safe("인덱스 선", lambda: svg_index_line(idx, 640, 150), "")}</div>')
+          + h2("구역별 자체 검증", "2분기 전 각 구역이던 종목들의 그 뒤 수익률") + bt_html + safe("가중치", weights_html, "")
+          + safe("히어로 성적표", hero_hist_html) + safe("따라 샀다면", follow_html)
+          + h2("고래 인덱스 3종 vs S&P500 · 1년", "컨빅션 TOP10 · 큰 신규 TOP10 · 역행 매수 TOP10 — 동일비중 가상 포트. 어느 전략이 통하나") + f'<div class="line wide">{safe("인덱스 선", lambda: svg_index_line(idx, 640, 150, trio), "")}</div>')
     p6 = (masthead(7, "구조와 흐름", "누가 잘하고, 어디에 돈이 몰리고, 확신은 어디에 있나")
           + '<div class="two">'
           + '<div>' + h2("기관 · 1년 수익률", "13F 보유 복제 추정치 · 빨강 순위 상승, 파랑 하락") + rank_list(inst, "inst") + '</div>'
@@ -4586,6 +5270,7 @@ def make_print_html(path, inst, ppl, agg, hist, details, items, prev, pc, Q, dis
           + '<div class="two">'
           + '<div>' + h2("섹터별 자금 흐름", "편입 순증감 합 · 작은 숫자는 종목 수") + sec_html + '</div>'
           + '<div>' + h2("컨빅션", "보유 펀드들의 포트 내 비중 합 — 소수가 크게 든 종목이 위로") + cv_t + '</div></div>'
+          + '<div class="two"><div>' + safe("믿을 만한 고래", rel_html) + '</div><div>' + safe("경계선", bound_html) + '</div></div>'
           + f'<p class="fine">가중 순증감 = 성적 좋은 펀드의 표를 더 무겁게 센 편입·편출 합계(1위 2.5표 ~ 하위 1.0표) · 동시 신규 = 같은 분기에 새로 담은 펀드 수 · 연속 이탈 = 보유 펀드 수가 몇 분기 연달아 줄었는지 · 고래 점수 = 큰 신규 30 · 가중 순증감 20 · 역행 15 · 평단 아래 15 · 임원 매수 10 · 동시 편입 10, 연속 이탈 −10. '
             f'평단·수익률·비중은 13F에서 역산한 추정치이며 실제 체결가가 아닙니다. 유니버스: 고래 {MIN_HOLD}곳 이상·상장 1년 이상·ETF·워런트·SPAC 제외 · 바이오 전문 펀드는 {MAX_BIO}곳까지. 출처 13f.info · Yahoo Finance · Nasdaq · OpenInsider · 투자 자문이 아닙니다.</p>')
 
@@ -4622,7 +5307,17 @@ html,body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans KR","
 .newstrip>i{font-style:normal;font-weight:900;color:var(--mut);margin-right:1mm}
 .chip{border:1px solid;border-radius:1.6mm;padding:.6mm 2mm;font-size:8.2pt;background:#fff}.chip b{margin-right:1.2mm;font-size:7.4pt}
 .top10{border:1px solid var(--line);border-radius:3mm;overflow:hidden}
-.trow{display:grid;grid-template-columns:7mm 44mm 34mm 1fr 15mm 14mm;gap:2.5mm;align-items:center;padding:2.6mm 3mm;border-top:1px solid var(--line)}
+.trow{display:grid;grid-template-columns:7mm 38mm 26mm 1fr 13mm 15mm 14mm;gap:2mm;align-items:center;padding:2mm 3mm;border-top:1px solid var(--line)}
+.tchips .wc{font-size:7pt;padding:.3mm 1.4mm;line-height:1.35}.trow .tchips{max-height:9.6mm;overflow:hidden;align-content:flex-start}
+.tchk{text-align:center}.dots5{font-size:8.6pt;letter-spacing:.3mm;font-weight:900;white-space:nowrap}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:1.6mm 3mm;padding:2mm 3mm;border:1.5px solid var(--hot);border-radius:2.5mm;background:#fff6f5;font-size:8.6pt}
+.acts>i{font-style:normal;font-weight:900;color:var(--hot);margin-right:1mm}.acts.none{border-color:var(--line);background:var(--paper)}.acts.none>i{color:var(--mut)}.acts.none span{color:var(--mut)}
+.act{display:inline-flex;align-items:center;gap:1.4mm;background:#fff;border:1px solid var(--line);border-radius:1.8mm;padding:.8mm 2mm}.act b{font-weight:900}.act em{font-style:normal;font-size:7.4pt;color:var(--hot);font-weight:900}.act .al{color:var(--mut);font-size:7.8pt}.act .ai{font-size:8pt}
+.trt{display:inline-block;margin-left:1.5mm;font-size:7.2pt;font-weight:900}
+.stl{display:flex;flex-direction:column;gap:1.2mm;margin-top:2mm}.st{display:flex;align-items:center;gap:2mm;border:1px solid var(--line);border-radius:2mm;padding:1.4mm 2.5mm;font-size:8.8pt}.st b{font-weight:900;min-width:12mm}.st i{font-style:normal;color:var(--mut)}.st .dots5{margin-left:auto}
+.t.split th:first-child{width:66%}.t.split .who{max-width:none;white-space:normal}.t.sw th:first-child{width:30%}.t.sw th:nth-child(3){width:34%}.nw{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}.t.rel th:first-child{width:34%}.t.rel td{font-size:8.4pt}
+.rk span small.sty{display:inline-block;margin-left:1.2mm;font-size:6.8pt;font-weight:700;color:var(--mut);border:1px solid var(--line);border-radius:1.2mm;padding:0 1mm}
+.who .sty{font-size:7pt}
 .tbar{flex-wrap:wrap}.tbar i{font-style:normal;font-size:7.4pt;width:100%;font-weight:700;margin-top:-.5mm}
 .wc b{font-weight:900;margin-right:.6mm}.tret small{display:block;font-size:7.4pt;color:var(--mut);font-weight:400}
 .trow:first-child{border-top:0}.trow.th{background:var(--paper);font-size:7.8pt;color:var(--mut);font-weight:700;padding:1.4mm 3mm}
@@ -5610,8 +6305,23 @@ def summary(inst, ppl, hits, delta, agg, prev=None, live=None, Q=None, clus=None
     t3 = top3_lines(Q, clus or [], cost or [], mov or [], warn or [], live or [], big or [], ins or [], X)
     if PRINT_ERR.get("fallback"):
         L += [f"⚠️ 오늘 PDF는 새 디자인을 못 만들어 옛 판입니다 ({esc(PRINT_ERR['msg'])}). 이 메시지를 캡처해 주세요.", ""]
+    if (X or {}).get("px_lag"):
+        L += [f"⚠️ 주가가 {X['px_lag']}거래일 묵었습니다 (마지막 {esc(X['px_last'])})" + (f" · 야후 실패 {X['px_cache']}종목" if X.get("px_cache") else "")
+              + " — '어제' 숫자는 그 날 기준입니다", ""]
+    acts = (X or {}).get("actions")
+    if acts:
+        L.append("⚡ <b>오늘 행동 필요</b>")
+        for icon, kind, sym, line in acts[:5]:
+            L.append(f"{icon} <b>{esc(sym)}</b> {esc(kind)} — {esc(line)}")
+        L.append("")
+    elif X is not None and "actions" in (X or {}):
+        L += ["⚡ 오늘 행동 필요: <i>없음 — 지켜보는 날</i>", ""]
     if t3:
         L += t3 + ["", "─────────", ""]
+    fl = (X or {}).get("follow")
+    if fl:
+        L.append(f"📊 따라 샀다면: {fl['days']}거래일 누적 <b>{fl['cum']:+.1f}%</b> (S&P {fl['spy']:+.1f}%)")
+        L.append("")
     if hits:
         L.append(f"새 13F <b>{len(hits)}건</b>")
         L.append("")
@@ -5757,7 +6467,12 @@ def main():
     delta = rank_delta(inst, ppl)
 
     log("\n집단 분석 (공동 보유 · 편입/편출 · 분기 추이)")
-    agg, hist = crowd_analysis(watch)
+    try:
+        rel_rows, rel = fund_reliability()          # 4.3 ① 과거 큰 신규 적중률 → 표 가중 배수
+        log(f"  믿을 만한 고래: {len(rel_rows)}곳 평가 (신호 {REL_MIN_N}개 이상)")
+    except Exception as e:
+        log(f"  고래 신뢰도 계산 실패(무시): {type(e).__name__}: {e}"); rel_rows, rel = [], {}
+    agg, hist = crowd_analysis(watch, rel)
     log(f"  종목 {len(agg):,}개 집계, 이력 {len(hist)}개 분기")
 
     log("\n유명인 개인별 상세 (상위 20명, 그중 10명은 최초 편입 시기까지)")
@@ -5815,6 +6530,12 @@ def main():
         warn = warning_rows(U, pc)
         earn = earnings_rows(U, pc)
         bt = backtest(agg, hist)
+        try:
+            wts = tune_weights(bt)                   # 4.3 ⑬ 검증 결과로 점수 가중치 보정 (top10 전에)
+            if wts and wts.get("weights") != SCORE_BASE:
+                log(f"  가중치 보정: {wts['weights']} · " + " / ".join(wts.get("notes") or []))
+        except Exception as e:
+            log(f"  가중치 보정 실패(기본값 사용): {type(e).__name__}: {e}"); wts = None
         # 빈 숫자가 섞인 줄 정리
         Q = {k: clean_rows(v, ("score", "ret_1y", "n_hold")) for k, v in Q.items()}
         mov = clean_rows(mov, ("ret_1d", "n_hold", "score"))
@@ -5839,19 +6560,47 @@ def main():
         hero = pick_hero(top, Q, mov, clus, cost, warn, idx, big, ins, prev, earn)
         log_hero(hero, pc)
         hero_rows, hero_summ = hero_report(pc)
+        # 4.3 — 신호 품질 · 행동 · 검증 · 고래 선별
+        earn_syms = {r["sym"] for r in earn}
+        trend = daily("추세", lambda: {r["sym"]: trend_tag(r["sym"]) for r in Q.get("contra", [])[:12]}, {})
+        split = daily("의견 갈림", lambda: clean_rows(split_rows(U, pc), ("n_hold",)), [])
+        switch = daily("갈아타기", lambda: switch_rows(watch), [])
+        debut = daily("첫 등장", lambda: debut_rows(agg, hist, pc), [])
+        checks = {}
+        def _checks():
+            rows = list(top) + ([hero["row"]] if hero and hero.get("row") and hero["sym"] not in {r["sym"] for r in top} else [])
+            for r in rows:
+                cl = checklist(r, earn_syms); r["check"] = cl; checks[r["sym"]] = check_dots(cl)
+            return checks
+        checks = daily("체크리스트", _checks, {})
+        states = daily("상태", lambda: stock_states(top, near, warn, checks), {})
+        st_chg = daily("상태 전이", lambda: state_changes(states, prev), [])
         sets = signal_sets(top, big, ins, mov, warn, hero, near, rebound, earn)
+        sets["state"] = states
         new_sig = whats_new(sets, prev)
         moves = daily("순위 변동", lambda: score_moves(top, prev), {})
         season = season_cards(hits, U, pc)
         eres = earnings_results(U, pc)
+        follow = daily("따라 샀다면", lambda: follow_report(top, pc), None)
+        trio = daily("인덱스 3종", lambda: index_trio(idx, big, Q), [])
+        bound = daily("경계선", lambda: boundary_rows(inst, ppl), {})
         X = {"top": top, "hero": hero, "new": new_sig, "season": season, "eres": eres,
              "hero_rows": hero_rows, "hero_summ": hero_summ,
-             "near": near, "rebound": rebound, "fday": fday, "sday": sday, "moves": moves}
+             "near": near, "rebound": rebound, "fday": fday, "sday": sday, "moves": moves,
+             "trend": trend, "split": split, "switch": switch, "debut": debut, "checks": checks,
+             "states": states, "state_changes": st_chg, "follow": follow, "trio": trio, "bound": bound,
+             "rel": rel_rows, "wts": wts}
+        X["actions"] = daily("행동 필요", lambda: action_items(X, warn, prev), [])
+        X["px_last"], X["px_lag"], X["px_cache"] = daily("주가 신선도", price_staleness, (None, 0, 0))
+        if X["px_lag"] or X["px_cache"] > 50:
+            log(f"  ⚠️ 주가 신선도: 마지막 {X['px_last']} · {X['px_lag']}거래일 지연 · 야후 실패→캐시 {X['px_cache']}종목")
         log(f"  고래 점수 상위 {len(top)} · 새 신호 {len(new_sig)} · 새 13F 카드 {len(season)} · 실적 반응 {len(eres)} · 히어로 성적표 {len(hero_rows)}")
         log(f"  일간: 히어로 '{(hero or {}).get('pick', '-')}' {(hero or {}).get('sym', '-')} · 평단 근처 {len(near)} · 반전 신호 {len(rebound)} · "
             f"고래별 어제 {len(fday)}곳 · 섹터 어제 {len(sday)} · 순위 변동 {len(moves)}")
+        log(f"  4.3: 행동 필요 {len(X['actions'])} · 상태 전이 {len(st_chg)} · 의견 갈림 {len(split)} · 갈아타기 {len(switch)} · 첫 등장 {len(debut)} · "
+            f"체크리스트 {len(checks)} · 따라 샀다면 {follow['days'] if follow else 0}일 · 인덱스 {len(trio)}종 · 믿을 만한 고래 {len(rel_rows)} · 스타일 {len(FUND_STYLE)}곳")
         try:
-            n_pages = build_stock_pages(U, pc, hist, big, ins, top)
+            n_pages = build_stock_pages(U, pc, hist, big, ins, top, earn_syms=earn_syms)
             log(f"  종목 사전 {n_pages}쪽 → docs/s/")
         except Exception as e:
             log(f"  종목 사전 실패: {type(e).__name__}: {e}")
