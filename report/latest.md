@@ -1,8 +1,8 @@
-# 고래 40 · 2026-10-18
+# 고래 40 · 2026-10-19
 
 1년 수익률 기준 기관 TOP 20 + 유명인 TOP 20
 
-_전일(2026-10-17) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
+_전일(2026-10-18) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
 
 ## 🔔 새로 올라온 13F
 
@@ -94,7 +94,7 @@ _전일(2026-10-17) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 13 | – | Viking Global Investors | **+19.5%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 | 14 | – | Boston Partners | **+19.0%** | · | AMZN 아마존, JPM JP모건, USFD US Foods |
 | 15 | – | D. E. Shaw | **+18.8%** | · | SPY S&P500 ETF, NONE Strategy, NVDA 엔비디아 |
-| 16 | – | First Eagle Investment Management | **+18.4%** | +0.1p | GOOG 알파벳 C, BDX 벡톤디킨슨, META 메타 |
+| 16 | – | First Eagle Investment Management | **+18.4%** | · | GOOG 알파벳 C, BDX 벡톤디킨슨, META 메타 |
 | 17 | – | Bridgewater Associates | **+17.6%** | · | SPY S&P500 ETF, IVV iShares S&P500, NVDA 엔비디아 |
 | 18 | – | Gotham Asset Management | **+17.5%** | · | SPY S&P500 ETF, AAPL 애플, NVDA 엔비디아 |
 | 19 | – | Fisher Asset Management | **+16.5%** | · | NVDA 엔비디아, AAPL 애플, IEF Ishares 7 10yr BD ETF |
@@ -104,9 +104,9 @@ _전일(2026-10-17) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 
 | # | 전일 | 이름 | 1년 | 증감 | 상위 보유 |
 |---|---|---|---|---|---|
-| 1 | ▲1 | 모니시 파브라이 | **+44.2%** | +0.1p | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
-| 2 | ▼1 | 폴 힐랄 | **+44.1%** | · | DLTR 달러트리 |
-| 3 | – | 브루스 버코위츠 | **+38.9%** | -0.1p | JOE 세인트조, EPD 엔터프라이즈프로덕츠, OZK 뱅크OZK |
+| 1 | – | 모니시 파브라이 | **+44.2%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
+| 2 | – | 폴 힐랄 | **+44.1%** | · | DLTR 달러트리 |
+| 3 | – | 브루스 버코위츠 | **+38.9%** | · | JOE 세인트조, EPD 엔터프라이즈프로덕츠, OZK 뱅크OZK |
 | 4 | – | 키스 마이스터 | **+37.4%** | · | ILMN 일루미나, WGS 진디엑스, VSTS 베스티스 |
 | 5 | – | 빌 밀러 | **+35.5%** | · | NBR 네이버스, GTN 그레이미디어, SPUU Direxion Shares ETF |
 | 6 | – | 폴 싱어 | **+34.7%** | · | TFPM.TO Triple Flag Precious M, PSX 필립스66, QQQ 나스닥100 ETF |
