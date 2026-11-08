@@ -1,8 +1,8 @@
-# 고래 40 · 2026-11-08
+# 고래 40 · 2026-11-09
 
 1년 수익률 기준 기관 TOP 20 + 유명인 TOP 20
 
-_전일(2026-11-07) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
+_전일(2026-11-08) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
 
 ## 🔔 새로 올라온 13F
 
@@ -88,7 +88,7 @@ _전일(2026-11-07) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 7 | – | Lakewood Capital Management | **+25.5%** | · | CI 시그나, AXTA Axalta Coating SYS, ICLR Icon PUB |
 | 8 | – | Perceptive Advisors | **+22.8%** | · | PRAX 프락시스, AGLE Spyre Therapeutics, CELC 셀큐이티 |
 | 9 | – | Ariel Investments | **+22.5%** | · | MSGE Madison Square Garden, OSW Onespaworld Limited, CRL Charles RIV Labs Intl |
-| 10 | – | Viking Global Investors | **+19.0%** | +0.1p | V 비자, TSM TSMC, APD 에어프로덕츠 |
+| 10 | – | Viking Global Investors | **+19.0%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 | 11 | – | Harris Associates | **+18.5%** | · | KDP 큐리그닥터페퍼, ABNB 에어비앤비, CRM 세일즈포스 |
 | 12 | – | Avoro Capital Advisors | **+18.2%** | · | UTHR 유나이티드테라퓨틱스, ASND 아센디스, KRYS 크리스탈바이오텍 |
 | 13 | – | First Eagle Investment Management | **+18.1%** | · | GOOG 알파벳 C, BDX 벡톤디킨슨, META 메타 |
@@ -97,7 +97,7 @@ _전일(2026-11-07) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 16 | – | Two Sigma Investments | **+16.6%** | · | NONE Western Digital, AMZN 아마존, NVDA 엔비디아 |
 | 17 | – | Deep Track Capital | **+15.9%** | · | GH 가던트헬스, IMVT 이뮤노반트, GPCR 스트럭처테라퓨틱스 |
 | 18 | – | Farallon Capital Management | **+15.5%** | · | EA Electronic Arts |
-| 19 | – | Empyrean Capital Partners | **+14.7%** | +0.2p | NONE ANI Pharmaceuticals, VSAT Viasat, AER Aercap |
+| 19 | – | Empyrean Capital Partners | **+14.7%** | · | NONE ANI Pharmaceuticals, VSAT Viasat, AER Aercap |
 | 20 | – | Boston Partners | **+14.4%** | · | AMZN 아마존, JPM JP모건, USFD US Foods |
 
 ## 유명인 TOP 20
@@ -113,7 +113,7 @@ _전일(2026-11-07) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 7 | – | 크리스 블룸스트란 | **+23.1%** | · | BRK-B Berkshire Hathaway, ALK 알래스카항공, BRK-A Berkshire Hathaway |
 | 8 | – | 브루스 버코위츠 | **+21.4%** | · | JOE 세인트조, EPD 엔터프라이즈프로덕츠, OZK 뱅크OZK |
 | 9 | – | 키스 마이스터 | **+21.2%** | · | ILMN 일루미나, WGS 진디엑스, VSTS 베스티스 |
-| 10 | – | 안드레아스 할보르센 | **+19.0%** | +0.1p | V 비자, TSM TSMC, APD 에어프로덕츠 |
+| 10 | – | 안드레아스 할보르센 | **+19.0%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 | 11 | – | 빌 나이그렌 | **+18.5%** | · | KDP 큐리그닥터페퍼, ABNB 에어비앤비, CRM 세일즈포스 |
 | 12 | – | 클리퍼드 소신 | **+17.7%** | · | CVNA 카바나, HGV Hilton Grand Vacations, META 메타 |
 | 13 | – | 모니시 파브라이 | **+17.1%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
