@@ -1,0 +1,44 @@
+name: ⏰ 새벽 알람 (제시간 시동)
+# GitHub 예약은 3~4시간씩 늦게 켜지는 일이 잦아, 새벽 스캔이 9~10시에야 돌곤 했음.
+# 그래서 Claude 예약 작업(🌅 새벽 스캔 시동)이 매일 05:03 에 대신 켜 주던 것을 여기로 옮김 (11/09).
+# 방법: 밤에 미리(늦어도 05시 전에) 깨어나 05:03 KST 까지 기다렸다가 스캔을 직접 켬.
+#       예약을 3번 걸어 두고, 이미 오늘 스캔이 켜졌으면 뒤의 것은 그냥 끝남. Claude 사용량 0.
+on:
+  schedule:
+    - cron: "7 15 * * *"     # KST 00:07 (늦게 켜져도 05시 전)
+    - cron: "37 16 * * *"    # KST 01:37 (예비)
+    - cron: "7 19 * * *"     # KST 04:07 (예비)
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: dawn-alarm
+  cancel-in-progress: false
+jobs:
+  alarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WF: daily.yml
+      AT_UTC: "20:03"          # = KST 05:03
+    steps:
+      - name: 05:03 KST 까지 기다렸다가 스캔 켜기
+        run: |
+          set -u
+          now=$(date -u +%s)
+          T=$(date -u -d "$(date -u +%F) $AT_UTC" +%s)
+          wait=$((T - now))
+          if [ $wait -gt 20400 ]; then echo "너무 이름 ($((wait/60))분 전) — 다음 예약이 맡음"; exit 0; fi
+          if [ $wait -gt 0 ]; then echo "$((wait/60))분 기다림"; sleep $wait; fi
+          dow=$(TZ=Asia/Seoul date +%u)   # 7 = 일요일 (토요일 밤 미국장 없음)
+          if [ "$dow" = "7" ]; then echo "일요일 새벽 — 건너뜀"; exit 0; fi
+          since=$(date -u -d "@$((T - 900))" +%Y-%m-%dT%H:%M:%SZ)
+          n=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$WF/runs?per_page=10&created=>=$since" --jq '.total_count')
+          if [ "${n:-0}" -gt 0 ]; then echo "이미 켜짐 ($n개) — 건너뜀"; exit 0; fi
+          for i in 1 2 3; do
+            if gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/$WF/dispatches" -f ref=main; then echo "✅ $WF 켬"; exit 0; fi
+            sleep 20
+          done
+          echo "❌ 켜기 실패"; exit 1
