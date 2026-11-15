@@ -1,8 +1,8 @@
-# 고래 40 · 2026-11-15
+# 고래 40 · 2026-11-16
 
 1년 수익률 기준 기관 TOP 20 + 유명인 TOP 20
 
-_전일(2026-11-14) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
+_전일(2026-11-15) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
 
 ## 🔔 새로 올라온 13F
 
@@ -88,14 +88,14 @@ _전일(2026-11-14) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 7 | – | Baker Bros. Advisors | **+24.2%** | · | INCY 인사이트, RVMD 레볼루션메디슨, MDGL 마드리갈 |
 | 8 | – | Perceptive Advisors | **+22.4%** | · | PRAX 프락시스, AGLE Spyre Therapeutics, CELC 셀큐이티 |
 | 9 | – | Ariel Investments | **+22.2%** | · | MSGE Madison Square Garden, AMG Affiliated Managers, CRL Charles RIV Labs Intl |
-| 10 | – | Viking Global Investors | **+21.8%** | +0.1p | V 비자, TSM TSMC, APD 에어프로덕츠 |
+| 10 | – | Viking Global Investors | **+21.8%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 | 11 | – | First Eagle Investment Management | **+21.3%** | · | GOOG 알파벳 C, BDX 벡톤디킨슨, META 메타 |
 | 12 | – | Ruane, Cunniff & Goldfarb | **+20.8%** | · | GOOGL 알파벳 A, TSM TSMC, FWONK Liberty Media |
 | 13 | – | Two Sigma Investments | **+20.5%** | · | NONE Western Digital, AMZN 아마존, NVDA 엔비디아 |
 | 14 | – | Harris Associates | **+18.9%** | · | KDP 큐리그닥터페퍼, ABNB 에어비앤비, CRM 세일즈포스 |
 | 15 | – | Empyrean Capital Partners | **+18.7%** | · | NONE ANI Pharmaceuticals, VSAT Viasat, AER Aercap |
 | 16 | – | Valiant Capital Management | **+18.1%** | · | AMZN 아마존, CORZ 코어사이언티픽, IWM 러셀2000 ETF |
-| 17 | – | Vivo Capital | **+16.6%** | -0.5p | PRAX 프락시스, TRVI 트레비, ERAS 에라스카 |
+| 17 | – | Vivo Capital | **+16.6%** | · | PRAX 프락시스, TRVI 트레비, ERAS 에라스카 |
 | 18 | – | Light Street Capital | **+16.3%** | · | TSM TSMC, AMD AMD, ALAB 아스테라랩스 |
 | 19 | – | Dodge & Cox | **+16.2%** | · | JCI Johnson Controls Inter, SCHW 찰스슈왑, MSFT 마이크로소프트 |
 | 20 | – | Gates Capital Management | **+16.1%** | · | XLI Select Sector Spdr, HYG 하이일드채권, XLB Select Sector Spdr |
@@ -114,7 +114,7 @@ _전일(2026-11-14) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 8 | – | 모니시 파브라이 | **+23.7%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
 | 9 | – | 크리스 블룸스트란 | **+22.9%** | · | BRK-B Berkshire Hathaway, ALK 알래스카항공, BRK-A Berkshire Hathaway |
 | 10 | – | 키스 마이스터 | **+22.2%** | · | ILMN 일루미나, WGS 진디엑스, VSTS 베스티스 |
-| 11 | – | 안드레아스 할보르센 | **+21.8%** | +0.1p | V 비자, TSM TSMC, APD 에어프로덕츠 |
+| 11 | – | 안드레아스 할보르센 | **+21.8%** | · | V 비자, TSM TSMC, APD 에어프로덕츠 |
 | 12 | – | 존 오버덱 | **+20.5%** | · | NONE Western Digital, AMZN 아마존, NVDA 엔비디아 |
 | 13 | – | 글렌 웰링 | **+19.9%** | · | VFC V F, YETI Yeti, GXO GXO Logistics Incorpor |
 | 14 | – | 세스 클라만 | **+19.5%** | · | AMZN 아마존, ELV 엘리번스, QSR Restaurant Brands Intl |
@@ -122,7 +122,7 @@ _전일(2026-11-14) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 16 | – | 넬슨 펠츠 | **+16.0%** | · | GE GE, JHG Janus Henderson, SOLV Solventum |
 | 17 | – | 스티브 코언 | **+15.8%** | · | NONE WEC Energy, SPY S&P500 ETF, CRDO 크레도 |
 | 18 | – | 조지 소로스 | **+15.6%** | · | NONE Pg&e, XLE 에너지 ETF, INTC 인텔 |
-| 19 | – | 스탠리 드러켄밀러 | **+14.8%** | -0.5p | NTRA 나테라, INSM 인스메드, TSM TSMC |
+| 19 | – | 스탠리 드러켄밀러 | **+14.8%** | · | NTRA 나테라, INSM 인스메드, TSM TSMC |
 | 20 | – | 워런 버핏 | **+14.5%** | · | AAPL 애플, AXP 아메리칸익스프레스, KO 코카콜라 |
 
 ---
