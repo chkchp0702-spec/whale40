@@ -38,9 +38,12 @@ jobs:
 
       - name: 한글 폰트 설치
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-nanum fonts-nanum-coding fonts-noto-cjk
-          sudo fc-cache -f
+          # 11/25 고침: 새 우분투에서 없어진 글꼴 꾸러미가 있어 멈췄음 → 하나씩 깔고, 없으면 건너뜀
+          sudo apt-get update -qq || true
+          for p in fonts-nanum fonts-noto-cjk fonts-nanum-coding; do
+            sudo apt-get install -y -qq "$p" || echo "⚠ $p 없음 — 건너뜀"
+          done
+          sudo fc-cache -f || true
 
       - name: 라이브러리 설치
         run: |
