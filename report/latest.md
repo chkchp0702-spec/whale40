@@ -1,34 +1,27 @@
-# 고래 40 · 2026-11-26
+# 고래 40 · 2026-11-27
 
 1년 수익률 기준 기관 TOP 20 + 유명인 TOP 20
 
-_전일(2026-11-25) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
+_전일(2026-11-26) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · NEW 신규 진입_
 
 ## 🔔 새로 올라온 13F
 
 최근 새 공시 없음. 13F는 분기마다(2·5·8·11월 중순) 몰려서 올라옵니다.
 
-## 🔄 TOP 20 변동
-
-- 기관 진입: D1 Capital Partners
-- 기관 이탈: Vivo Capital
-- 유명인 진입: 조지 소로스
-- 유명인 이탈: 알렉스 데너
-
 ## 🤝 여러 곳이 함께 보유한 종목
 
 | 종목 | 보유 | 전일 | 합계 주식수 | 합계 평가액 | 편입 | 편출 |
 |---|---|---|---|---|---|---|
-| META 메타 | 13곳 | +2 | 17,329,143 | $12.57B | 5 | 5 |
-| GOOGL 알파벳 A | 11곳 | +2 | 104,314,813 | $35.89B | 1 | 4 |
-| AMZN 아마존 | 9곳 | +1 | 52,320,888 | $13.04B | 5 | 2 |
-| COF 캐피털원 | 9곳 | +1 | 29,465,179 | $5.69B | 4 | 0 |
+| META 메타 | 13곳 | · | 17,329,143 | $12.57B | 5 | 5 |
+| GOOGL 알파벳 A | 11곳 | · | 104,314,813 | $35.89B | 1 | 4 |
+| AMZN 아마존 | 9곳 | · | 52,320,888 | $13.04B | 5 | 2 |
+| COF 캐피털원 | 9곳 | · | 29,465,179 | $5.69B | 4 | 0 |
 | GOOG 알파벳 C | 8곳 | · | 63,822,634 | $21.75B | 1 | 3 |
-| V 비자 | 8곳 | +1 | 46,385,794 | $16.67B | 1 | 2 |
-| SPGI S&P글로벌 | 7곳 | +1 | 15,935,776 | $6.29B | 3 | 2 |
-| TSM TSMC | 7곳 | +2 | 12,436,787 | $5.67B | 3 | 1 |
+| V 비자 | 8곳 | · | 46,385,794 | $16.67B | 1 | 2 |
+| SPGI S&P글로벌 | 7곳 | · | 15,935,776 | $6.29B | 3 | 2 |
+| TSM TSMC | 7곳 | · | 12,436,787 | $5.67B | 3 | 1 |
 | DIS 디즈니 | 7곳 | · | 29,125,592 | $3.05B | 1 | 2 |
-| MSFT 마이크로소프트 | 6곳 | +2 | 22,144,519 | $11.36B | 1 | 4 |
+| MSFT 마이크로소프트 | 6곳 | · | 22,144,519 | $11.36B | 1 | 4 |
 | BKNG 부킹홀딩스 | 6곳 | · | 36,992,166 | $6.03B | 4 | 1 |
 | UNP 유니온퍼시픽 | 6곳 | · | 7,243,471 | $1.97B | 0 | 6 |
 | SCHW 찰스슈왑 | 5곳 | · | 103,416,662 | $10.11B | 0 | 2 |
@@ -39,16 +32,16 @@ _전일(2026-11-25) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 
 | 종목 | 편입 | 편출 | 순증감 | 전일 | 보유 | 합계 평가액 |
 |---|---|---|---|---|---|---|
-| COF 캐피털원 | 4 | 0 | **+4** | +1 | 9곳 | $5.69B |
-| AMZN 아마존 | 5 | 2 | **+3** | -1 | 9곳 | $13.04B |
+| COF 캐피털원 | 4 | 0 | **+4** | · | 9곳 | $5.69B |
+| AMZN 아마존 | 5 | 2 | **+3** | · | 9곳 | $13.04B |
 | BKNG 부킹홀딩스 | 4 | 1 | **+3** | · | 6곳 | $6.03B |
 | UBER 우버 | 3 | 0 | **+3** | · | 4곳 | $1.74B |
 | ONON ON AG | 3 | 0 | **+3** | · | 3곳 | $363.7M |
 | ORCL 오라클 | 3 | 0 | **+3** | · | 3곳 | $1.81B |
-| SKHY SK Hynix | 3 | 0 | **+3** | +1 | 3곳 | $330.0M |
+| SKHY SK Hynix | 3 | 0 | **+3** | · | 3곳 | $330.0M |
 | SGI Somnigroup Internation | 3 | 0 | **+3** | · | 3곳 | $762.1M |
 | MLM Martin Marietta Matls | 3 | 0 | **+3** | · | 3곳 | $1.57B |
-| TSM TSMC | 3 | 1 | **+2** | -1 | 7곳 | $5.67B |
+| TSM TSMC | 3 | 1 | **+2** | · | 7곳 | $5.67B |
 | APO 아폴로 | 3 | 1 | **+2** | · | 5곳 | $877.5M |
 | CI 시그나 | 2 | 0 | **+2** | · | 4곳 | $4.21B |
 
@@ -57,15 +50,15 @@ _전일(2026-11-25) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 | 종목 | 편입 | 편출 | 순증감 | 전일 | 보유 | 합계 평가액 |
 |---|---|---|---|---|---|---|
 | UNP 유니온퍼시픽 | 0 | 6 | **-6** | · | 6곳 | $1.97B |
-| RVMD 레볼루션메디슨 | 0 | 4 | **-4** | +1 | 3곳 | $2.78B |
+| RVMD 레볼루션메디슨 | 0 | 4 | **-4** | · | 3곳 | $2.78B |
 | CRL Charles RIV Labs Intl | 0 | 4 | **-4** | · | 3곳 | $784.9M |
-| GOOGL 알파벳 A | 1 | 4 | **-3** | -1 | 11곳 | $35.89B |
-| MSFT 마이크로소프트 | 1 | 4 | **-3** | -2 | 6곳 | $11.36B |
+| GOOGL 알파벳 A | 1 | 4 | **-3** | · | 11곳 | $35.89B |
+| MSFT 마이크로소프트 | 1 | 4 | **-3** | · | 6곳 | $11.36B |
 | TMO 써모피셔 | 0 | 3 | **-3** | · | 4곳 | $3.20B |
 | ORKA Oruka Therapeutics | 0 | 3 | **-3** | · | 3곳 | $183.2M |
 | IONS Ionis Pharmaceuticals | 0 | 3 | **-3** | · | 1곳 | $45.7M |
 | TPX Somnigroup Internation | 0 | 3 | **-3** | · | 0곳 | $0 |
-| NUVL Nuvalent | 0 | 3 | **-3** | -1 | 0곳 | $0 |
+| NUVL Nuvalent | 0 | 3 | **-3** | · | 0곳 | $0 |
 | GOOG 알파벳 C | 1 | 3 | **-2** | · | 8곳 | $21.75B |
 | ELV 엘리번스 | 0 | 2 | **-2** | · | 5곳 | $4.39B |
 
@@ -86,51 +79,51 @@ _전일(2026-11-25) 대비 — ▲ 오름 · ▼ 내림 · ★ 새로 등장 · 
 
 | # | 전일 | 이름 | 1년 | 증감 | 상위 보유 |
 |---|---|---|---|---|---|
-| 1 | – | Slate Path Capital | **+42.1%** | -0.6p | UNP 유니온퍼시픽, U 유니티, RIVN Rivian Automotive |
-| 2 | – | EcoR1 Capital | **+32.8%** | -2.7p | ZYME 자임웍스, ANAB 아냅티스바이오, BMY BMS |
-| 3 | – | BVF | **+31.5%** | -3.3p | RVMD 레볼루션메디슨, KYMR 카이메라, GHRS GH Research |
-| 4 | – | Baker Bros. Advisors | **+26.0%** | -1.9p | INCY 인사이트, ONC BeOne Medicines, RVMD 레볼루션메디슨 |
-| 5 | – | Glenview Capital Management | **+23.1%** | -1.4p | GPN 글로벌페이먼츠, THC 테닛헬스케어, META 메타 |
-| 6 | ▲1 | Viking Global Investors | **+18.7%** | +0.1p | TSM TSMC, V 비자, APD 에어프로덕츠 |
-| 7 | ▲2 | Lakewood Capital Management | **+18.7%** | +1.1p | CI 시그나, AXTA Axalta Coating SYS, ICLR Icon PUB |
-| 8 | ▼2 | Boston Partners | **+18.1%** | -1.5p | AMZN 아마존, MSFT 마이크로소프트, JPM JP모건 |
-| 9 | ▲1 | Ariel Investments | **+17.7%** | +0.1p | MSGE Madison Square Garden, AMG Affiliated Managers, CRL Charles RIV Labs Intl |
-| 10 | ▼2 | Perceptive Advisors | **+16.9%** | -0.8p | PRAX 프락시스, AMLX Amylyx Pharmaceuticals, SYRE Spyre Therapeutics |
-| 11 | – | Empyrean Capital Partners | **+16.3%** | -0.1p | NONE Pagerduty, AER Aercap, VSAT Viasat |
-| 12 | ▲1 | Harris Associates | **+14.7%** | +0.3p | CRM 세일즈포스, IQV Iqvia, ICE ICE |
-| 13 | ▲2 | Gates Capital Management | **+14.5%** | +1.1p | HYG 하이일드채권, TIC TIC Solutions, PNR Pentair |
-| 14 | – | Deep Track Capital | **+13.4%** | -0.6p | GH 가던트헬스, BMRN Biomarin Pharmaceutica, IMVT 이뮤노반트 |
-| 15 | ▲1 | Dodge & Cox | **+12.4%** | -0.8p | JCI Johnson Controls Inter, SCHW 찰스슈왑, MSFT 마이크로소프트 |
-| 16 | ▲1 | Ruane, Cunniff & Goldfarb | **+12.3%** | -0.3p | TSM TSMC, FWONK Liberty Media, GOOGL 알파벳 A |
-| 17 | ▲1 | Farallon Capital Management | **+11.9%** | · | WBD 워너브러더스, KVUE Kenvue |
-| 18 | ▼6 | Avoro Capital Advisors | **+11.8%** | -2.9p | UTHR 유나이티드테라퓨틱스, ASND 아센디스, KRYS 크리스탈바이오텍 |
+| 1 | – | Slate Path Capital | **+42.1%** | · | UNP 유니온퍼시픽, U 유니티, RIVN Rivian Automotive |
+| 2 | – | EcoR1 Capital | **+32.8%** | · | ZYME 자임웍스, ANAB 아냅티스바이오, BMY BMS |
+| 3 | – | BVF | **+31.5%** | · | RVMD 레볼루션메디슨, KYMR 카이메라, GHRS GH Research |
+| 4 | – | Baker Bros. Advisors | **+26.0%** | · | INCY 인사이트, ONC BeOne Medicines, RVMD 레볼루션메디슨 |
+| 5 | – | Glenview Capital Management | **+23.1%** | · | GPN 글로벌페이먼츠, THC 테닛헬스케어, META 메타 |
+| 6 | ▲1 | Lakewood Capital Management | **+18.7%** | · | CI 시그나, AXTA Axalta Coating SYS, ICLR Icon PUB |
+| 7 | ▼1 | Viking Global Investors | **+18.7%** | · | TSM TSMC, V 비자, APD 에어프로덕츠 |
+| 8 | – | Boston Partners | **+18.1%** | · | AMZN 아마존, MSFT 마이크로소프트, JPM JP모건 |
+| 9 | – | Ariel Investments | **+17.7%** | · | MSGE Madison Square Garden, AMG Affiliated Managers, CRL Charles RIV Labs Intl |
+| 10 | – | Perceptive Advisors | **+16.9%** | · | PRAX 프락시스, AMLX Amylyx Pharmaceuticals, SYRE Spyre Therapeutics |
+| 11 | – | Empyrean Capital Partners | **+16.3%** | · | NONE Pagerduty, AER Aercap, VSAT Viasat |
+| 12 | – | Harris Associates | **+14.7%** | · | CRM 세일즈포스, IQV Iqvia, ICE ICE |
+| 13 | – | Gates Capital Management | **+14.5%** | · | HYG 하이일드채권, TIC TIC Solutions, PNR Pentair |
+| 14 | – | Deep Track Capital | **+13.4%** | · | GH 가던트헬스, BMRN Biomarin Pharmaceutica, IMVT 이뮤노반트 |
+| 15 | – | Dodge & Cox | **+12.4%** | · | JCI Johnson Controls Inter, SCHW 찰스슈왑, MSFT 마이크로소프트 |
+| 16 | – | Ruane, Cunniff & Goldfarb | **+12.3%** | · | TSM TSMC, FWONK Liberty Media, GOOGL 알파벳 A |
+| 17 | – | Farallon Capital Management | **+11.9%** | · | WBD 워너브러더스, KVUE Kenvue |
+| 18 | – | Avoro Capital Advisors | **+11.8%** | · | UTHR 유나이티드테라퓨틱스, ASND 아센디스, KRYS 크리스탈바이오텍 |
 | 19 | – | First Eagle Investment Management | **+11.3%** | · | GOOG 알파벳 C, BDX 벡톤디킨슨, META 메타 |
-| 20 | NEW | D1 Capital Partners | **+9.7%** | · | SPCX Space Exploration Tech, CART Maplebear, LSCC Lattice Semiconductor |
+| 20 | – | D1 Capital Partners | **+9.7%** | · | SPCX Space Exploration Tech, CART Maplebear, LSCC Lattice Semiconductor |
 
 ## 유명인 TOP 20
 
 | # | 전일 | 이름 | 1년 | 증감 | 상위 보유 |
 |---|---|---|---|---|---|
-| 1 | – | 폴 힐랄 | **+63.2%** | -6.0p | DLTR 달러트리 |
-| 2 | – | 노버트 로우 | **+23.9%** | -0.5p | BRK-A Berkshire Hathaway, CROX Crocs, PDD 핀둬둬 |
-| 3 | – | 빌 밀러 | **+23.4%** | +1.3p | NBR 네이버스, GTN 그레이미디어, CRGY Crescent Energy |
-| 4 | ▲2 | 안드레아스 할보르센 | **+18.7%** | +0.1p | TSM TSMC, V 비자, APD 에어프로덕츠 |
-| 5 | – | 퀜틴 코피 | **+18.0%** | -0.9p | AZTA Azenta, CNC Centene |
-| 6 | ▼2 | 크리스 블룸스트란 | **+17.8%** | -1.5p | BRK-B Berkshire Hathaway, BRK-A Berkshire Hathaway, DG 달러제너럴 |
-| 7 | ▲1 | 키스 마이스터 | **+17.1%** | +0.2p | WGS 진디엑스, VST Vistra, VSTS 베스티스 |
-| 8 | ▼1 | 폴 싱어 | **+16.7%** | -0.4p | PSX 필립스66, TFPM 트리플플래그, QQQ 나스닥100 ETF |
-| 9 | ▲1 | 모니시 파브라이 | **+15.7%** | +1.9p | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
-| 10 | ▼1 | 빌 나이그렌 | **+14.7%** | +0.3p | CRM 세일즈포스, IQV Iqvia, ICE ICE |
+| 1 | – | 폴 힐랄 | **+63.2%** | · | DLTR 달러트리 |
+| 2 | – | 노버트 로우 | **+23.9%** | · | BRK-A Berkshire Hathaway, CROX Crocs, PDD 핀둬둬 |
+| 3 | – | 빌 밀러 | **+23.5%** | · | NBR 네이버스, GTN 그레이미디어, CRGY Crescent Energy |
+| 4 | – | 안드레아스 할보르센 | **+18.7%** | · | TSM TSMC, V 비자, APD 에어프로덕츠 |
+| 5 | – | 퀜틴 코피 | **+18.0%** | · | AZTA Azenta, CNC Centene |
+| 6 | – | 크리스 블룸스트란 | **+17.9%** | +0.1p | BRK-B Berkshire Hathaway, BRK-A Berkshire Hathaway, DG 달러제너럴 |
+| 7 | – | 키스 마이스터 | **+17.1%** | · | WGS 진디엑스, VST Vistra, VSTS 베스티스 |
+| 8 | – | 폴 싱어 | **+16.7%** | · | PSX 필립스66, TFPM 트리플플래그, QQQ 나스닥100 ETF |
+| 9 | – | 모니시 파브라이 | **+15.7%** | · | HCC 워리어멧콜, RIG 트랜스오션, AMR 알파메탈러지컬 |
+| 10 | – | 빌 나이그렌 | **+14.7%** | · | CRM 세일즈포스, IQV Iqvia, ICE ICE |
 | 11 | – | 워런 버핏 | **+11.7%** | · | AAPL 애플, AXP 아메리칸익스프레스, KO 코카콜라 |
-| 12 | ▲1 | 브루스 버코위츠 | **+11.6%** | +0.6p | JOE 세인트조, EPD 엔터프라이즈프로덕츠, BRK-B Berkshire Hathaway |
-| 13 | ▲1 | 팻 도시 | **+10.6%** | · | VEEV Veeva SYS, APP 앱러빈, META 메타 |
-| 14 | ▼2 | 넬슨 펠츠 | **+10.3%** | -0.8p | GE GE, SOLV Solventum, GEHC GE HealthCare Technolo |
-| 15 | ▲3 | 제프 스미스 | **+10.0%** | +0.5p | IJH Ishares, QRVO Qorvo, KVUE Kenvue |
-| 16 | ▲4 | 댄 선드하임 | **+9.7%** | +0.6p | SPCX Space Exploration Tech, CART Maplebear, LSCC Lattice Semiconductor |
-| 17 | ▼1 | 리루 | **+9.6%** | -0.1p | PDD 핀둬둬, GOOGL 알파벳 A, GOOG 알파벳 C |
-| 18 | ▼1 | 크리스 혼 | **+9.5%** | -0.2p | GE GE, V 비자, MCO 무디스 |
-| 19 | – | 세스 클라만 | **+8.7%** | -0.7p | AMZN 아마존, ELV 엘리번스, QSR Restaurant Brands Intl |
-| 20 | NEW | 조지 소로스 | **+7.7%** | · | NONE Pg&e, XLE 에너지 ETF, INTC 인텔 |
+| 12 | – | 브루스 버코위츠 | **+11.6%** | · | JOE 세인트조, EPD 엔터프라이즈프로덕츠, BRK-B Berkshire Hathaway |
+| 13 | – | 팻 도시 | **+10.6%** | · | VEEV Veeva SYS, APP 앱러빈, META 메타 |
+| 14 | – | 넬슨 펠츠 | **+10.3%** | · | GE GE, SOLV Solventum, GEHC GE HealthCare Technolo |
+| 15 | – | 제프 스미스 | **+10.0%** | · | IJH Ishares, QRVO Qorvo, KVUE Kenvue |
+| 16 | – | 댄 선드하임 | **+9.7%** | · | SPCX Space Exploration Tech, CART Maplebear, LSCC Lattice Semiconductor |
+| 17 | – | 리루 | **+9.6%** | · | PDD 핀둬둬, GOOGL 알파벳 A, GOOG 알파벳 C |
+| 18 | – | 크리스 혼 | **+9.5%** | +0.1p | GE GE, V 비자, MCO 무디스 |
+| 19 | – | 세스 클라만 | **+8.7%** | · | AMZN 아마존, ELV 엘리번스, QSR Restaurant Brands Intl |
+| 20 | – | 조지 소로스 | **+7.7%** | · | NONE Pg&e, XLE 에너지 ETF, INTC 인텔 |
 
 ---
 
@@ -164,7 +157,7 @@ Q3 2026 · 5종목 · 총 $228.9M · 공시 2026-09-30
 
 _`~` 표시는 조회 범위(Q3 2023) 이전부터 보유했을 수 있다는 뜻입니다._
 
-## 3위 빌 밀러  `1Y +23.4%`
+## 3위 빌 밀러  `1Y +23.5%`
 Q3 2026 · 53종목 · 총 $461.3M · 공시 2026-09-30
 
 **✨ 신규 편입**
@@ -362,7 +355,7 @@ Q3 2026 · 2종목 · 총 $293.9M · 공시 2026-09-30
 
 _`~` 표시는 조회 범위(Q3 2023) 이전부터 보유했을 수 있다는 뜻입니다._
 
-## 6위 크리스 블룸스트란  `1Y +17.8%`
+## 6위 크리스 블룸스트란  `1Y +17.9%`
 Q3 2026 · 51종목 · 총 $889.5M · 공시 2026-09-30
 
 **✨ 신규 편입**
@@ -988,76 +981,76 @@ Q3 2026 · 240종목 · 총 $8.51B · 공시 2026-09-30
 
 | 종목 | 비중 | 주식수 | 평가액 |
 |---|---|---|---|
-| ★ XOP Spdr Series | **3.85%** | 1,826,500 | $327.5M |
-| ★ XLU Select Sector Spdr | **2.91%** | 6,281,387 | $247.7M |
-| ★ TLT 미국장기국채 | **2.79%** | 3,050,000 | $237.2M |
-| ★ EXPE 익스피디아 | **2.25%** | 725,843 | $191.2M |
-| ★ WDAY 워크데이 | **1.12%** | 500,000 | $95.2M |
-| ★ MKTX Marketaxess | **0.94%** | 488,804 | $80.1M |
-| ★ NEEPRV Nextera Energy | **0.78%** | 1,554,928 | $66.7M |
-| ★ SKHY SK Hynix | **0.70%** | 325,000 | $59.8M |
-| ★ AES AES | **0.64%** | 3,627,986 | $54.1M |
-| ★ AAMI Acadian Asset Manageme | **0.63%** | 583,928 | $53.6M |
-| ★ IEFA Ishares | **0.57%** | 500,394 | $48.5M |
-| ★ OGE OGE Energy | **0.53%** | 1,000,569 | $45.4M |
-| ★ CLS Celestica | **0.53%** | 125,000 | $45.2M |
-| ★ OGN Organon & | **0.48%** | 2,953,681 | $40.5M |
-| ★ SYY Sysco | **0.46%** | 502,698 | $39.2M |
-| ★ ACVA ACV Auctions | **0.45%** | 3,693,247 | $38.5M |
-| ★ LNTH Lantheus | **0.43%** | 363,967 | $36.2M |
-| ★ DT Dynatrace | **0.42%** | 617,814 | $35.7M |
-| ★ SAFT Safety INS | **0.40%** | 330,142 | $34.2M |
-| ★ SHOP 쇼피파이 | **0.39%** | 222,745 | $33.0M |
+| XOP Spdr Series | **3.85%** | 1,826,500 | $327.5M |
+| XLU Select Sector Spdr | **2.91%** | 6,281,387 | $247.7M |
+| TLT 미국장기국채 | **2.79%** | 3,050,000 | $237.2M |
+| EXPE 익스피디아 | **2.25%** | 725,843 | $191.2M |
+| WDAY 워크데이 | **1.12%** | 500,000 | $95.2M |
+| MKTX Marketaxess | **0.94%** | 488,804 | $80.1M |
+| NEEPRV Nextera Energy | **0.78%** | 1,554,928 | $66.7M |
+| SKHY SK Hynix | **0.70%** | 325,000 | $59.8M |
+| AES AES | **0.64%** | 3,627,986 | $54.1M |
+| AAMI Acadian Asset Manageme | **0.63%** | 583,928 | $53.6M |
+| IEFA Ishares | **0.57%** | 500,394 | $48.5M |
+| OGE OGE Energy | **0.53%** | 1,000,569 | $45.4M |
+| CLS Celestica | **0.53%** | 125,000 | $45.2M |
+| OGN Organon & | **0.48%** | 2,953,681 | $40.5M |
+| SYY Sysco | **0.46%** | 502,698 | $39.2M |
+| ACVA ACV Auctions | **0.45%** | 3,693,247 | $38.5M |
+| LNTH Lantheus | **0.43%** | 363,967 | $36.2M |
+| DT Dynatrace | **0.42%** | 617,814 | $35.7M |
+| SAFT Safety INS | **0.40%** | 330,142 | $34.2M |
+| SHOP 쇼피파이 | **0.39%** | 222,745 | $33.0M |
 
 **➕ 늘린 종목**
 
 | 종목 | 증가율 | 비중 | 주식수 (직전→현재) |
 |---|---|---|---|
-| ★ XLE 에너지 ETF | **+444.9%** | 7.88% | 2,000,000 → 10,898,300 |
-| ★ INTC 인텔 | **+2730.0%** | 4.00% | 100,000 → 2,830,000 |
-| ★ META 메타 | **+595.7%** | 1.29% | 21,776 → 151,505 |
-| ★ ETR Entergy | **+16.6%** | 1.24% | 913,912 → 1,065,756 |
-| ★ SPY S&P500 ETF | **+36.1%** | 1.22% | 100,000 → 136,057 |
-| ★ CRWV 코어위브 | **+22.3%** | 1.19% | 950,000 → 1,161,700 |
-| ★ ACA Arcosa | **+252.2%** | 0.94% | 155,000 → 545,938 |
-| ★ DDOG 데이터독 | **+2578.0%** | 0.83% | 9,662 → 258,747 |
-| ★ NATL NCR Atleos | **+50.6%** | 0.83% | 1,033,562 → 1,556,196 |
-| ★ SUNB Sunbelt Rentals | **+85.8%** | 0.82% | 516,034 → 958,737 |
-| ★ KVUE Kenvue | **+38.1%** | 0.79% | 2,746,636 → 3,793,186 |
-| ★ WBD 워너브러더스 | **+41.3%** | 0.77% | 1,488,690 → 2,103,400 |
-| ★ XEL Xcel Energy | **+19.5%** | 0.53% | 533,324 → 637,427 |
-| ★ BGC BGC | **+8.0%** | 0.51% | 3,481,891 → 3,759,170 |
-| ★ EMXC Ishares | **+17.3%** | 0.48% | 354,686 → 416,048 |
-| ★ PAYO Payoneer Global | **+68.6%** | 0.45% | 3,200,000 → 5,394,360 |
-| ★ MU 마이크론 | **+58.9%** | 0.45% | 22,422 → 35,618 |
-| ★ VRNS Varonis SYS | **+392.1%** | 0.37% | 133,700 → 657,951 |
-| ★ COF 캐피털원 | **+8.8%** | 0.36% | 147,062 → 159,979 |
-| ★ ETSY Etsy | **+41.8%** | 0.35% | 297,000 → 421,033 |
+| XLE 에너지 ETF | **+444.9%** | 7.88% | 2,000,000 → 10,898,300 |
+| INTC 인텔 | **+2730.0%** | 4.00% | 100,000 → 2,830,000 |
+| META 메타 | **+595.7%** | 1.29% | 21,776 → 151,505 |
+| ETR Entergy | **+16.6%** | 1.24% | 913,912 → 1,065,756 |
+| SPY S&P500 ETF | **+36.1%** | 1.22% | 100,000 → 136,057 |
+| CRWV 코어위브 | **+22.3%** | 1.19% | 950,000 → 1,161,700 |
+| ACA Arcosa | **+252.2%** | 0.94% | 155,000 → 545,938 |
+| DDOG 데이터독 | **+2578.0%** | 0.83% | 9,662 → 258,747 |
+| NATL NCR Atleos | **+50.6%** | 0.83% | 1,033,562 → 1,556,196 |
+| SUNB Sunbelt Rentals | **+85.8%** | 0.82% | 516,034 → 958,737 |
+| KVUE Kenvue | **+38.1%** | 0.79% | 2,746,636 → 3,793,186 |
+| WBD 워너브러더스 | **+41.3%** | 0.77% | 1,488,690 → 2,103,400 |
+| XEL Xcel Energy | **+19.5%** | 0.53% | 533,324 → 637,427 |
+| BGC BGC | **+8.0%** | 0.51% | 3,481,891 → 3,759,170 |
+| EMXC Ishares | **+17.3%** | 0.48% | 354,686 → 416,048 |
+| PAYO Payoneer Global | **+68.6%** | 0.45% | 3,200,000 → 5,394,360 |
+| MU 마이크론 | **+58.9%** | 0.45% | 22,422 → 35,618 |
+| VRNS Varonis SYS | **+392.1%** | 0.37% | 133,700 → 657,951 |
+| COF 캐피털원 | **+8.8%** | 0.36% | 147,062 → 159,979 |
+| ETSY Etsy | **+41.8%** | 0.35% | 297,000 → 421,033 |
 
 **➖ 줄인 종목**
 
 | 종목 | 감소율 | 비중 | 주식수 (직전→현재) |
 |---|---|---|---|
-| ★ KDK Kodiak AI | **-58.0%** | 0.09% | 9,767,037 → 4,099,558 |
-| ★ NONE Pg&e | **-100.0%** | 13.70% | 6,115,927 → 0 |
-| ★ DBRG Digitalbridge *(전량매도)* | **-100.0%** | 0.00% | 4,118,793 → 0 |
-| ★ GBTG Global Business Travel *(전량매도)* | **-100.0%** | 0.00% | 3,346,860 → 0 |
-| ★ TALK Talkspace *(전량매도)* | **-100.0%** | 0.00% | 2,767,040 → 0 |
-| ★ ORCC Blue OWL Capital *(전량매도)* | **-100.0%** | 0.00% | 2,451,136 → 0 |
-| ★ XE X-energy | **-27.1%** | 0.27% | 2,245,454 → 1,636,925 |
-| ★ SMCIP Super Micro Computer *(전량매도)* | **-100.0%** | 0.00% | 2,175,408 → 0 |
-| ★ AINV Midcap Financial Invst *(전량매도)* | **-100.0%** | 0.00% | 1,944,500 → 0 |
-| ★ MAC Macerich | **-49.1%** | 0.26% | 1,938,506 → 986,900 |
-| ★ MDLN Medline | **-38.8%** | 0.41% | 1,638,244 → 1,003,364 |
-| ★ SW Smurfit Westrock | **-45.8%** | 0.42% | 1,512,798 → 819,885 |
-| ★ NVDA 엔비디아 | **-17.5%** | 3.24% | 1,464,635 → 1,208,822 |
-| ★ SJW H2O America *(전량매도)* | **-100.0%** | 0.00% | 1,254,368 → 0 |
-| ★ GOOGN Alphabet *(전량매도)* | **-100.0%** | 0.00% | 1,200,000 → 0 |
-| ★ AMZN 아마존 | **-10.8%** | 3.09% | 1,182,529 → 1,055,346 |
-| ★ ITRI Itron | **-20.0%** | 0.92% | 1,137,853 → 910,078 |
-| ★ BHF Brighthouse Finl | **-30.1%** | 0.46% | 1,116,250 → 779,942 |
-| ★ WBS Webster Finl *(전량매도)* | **-100.0%** | 0.00% | 1,113,487 → 0 |
-| ★ HUN Huntsman | **-94.6%** | 0.01% | 1,056,759 → 56,759 |
+| KDK Kodiak AI | **-58.0%** | 0.09% | 9,767,037 → 4,099,558 |
+| NONE Pg&e | **-100.0%** | 13.70% | 6,115,927 → 0 |
+| DBRG Digitalbridge *(전량매도)* | **-100.0%** | 0.00% | 4,118,793 → 0 |
+| GBTG Global Business Travel *(전량매도)* | **-100.0%** | 0.00% | 3,346,860 → 0 |
+| TALK Talkspace *(전량매도)* | **-100.0%** | 0.00% | 2,767,040 → 0 |
+| ORCC Blue OWL Capital *(전량매도)* | **-100.0%** | 0.00% | 2,451,136 → 0 |
+| XE X-energy | **-27.1%** | 0.27% | 2,245,454 → 1,636,925 |
+| SMCIP Super Micro Computer *(전량매도)* | **-100.0%** | 0.00% | 2,175,408 → 0 |
+| AINV Midcap Financial Invst *(전량매도)* | **-100.0%** | 0.00% | 1,944,500 → 0 |
+| MAC Macerich | **-49.1%** | 0.26% | 1,938,506 → 986,900 |
+| MDLN Medline | **-38.8%** | 0.41% | 1,638,244 → 1,003,364 |
+| SW Smurfit Westrock | **-45.8%** | 0.42% | 1,512,798 → 819,885 |
+| NVDA 엔비디아 | **-17.5%** | 3.24% | 1,464,635 → 1,208,822 |
+| SJW H2O America *(전량매도)* | **-100.0%** | 0.00% | 1,254,368 → 0 |
+| GOOGN Alphabet *(전량매도)* | **-100.0%** | 0.00% | 1,200,000 → 0 |
+| AMZN 아마존 | **-10.8%** | 3.09% | 1,182,529 → 1,055,346 |
+| ITRI Itron | **-20.0%** | 0.92% | 1,137,853 → 910,078 |
+| BHF Brighthouse Finl | **-30.1%** | 0.46% | 1,116,250 → 779,942 |
+| WBS Webster Finl *(전량매도)* | **-100.0%** | 0.00% | 1,113,487 → 0 |
+| HUN Huntsman | **-94.6%** | 0.01% | 1,056,759 → 56,759 |
 
 ---
 
